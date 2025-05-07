@@ -1,0 +1,13 @@
+.ipynb_checkpoints/
+.idea/
+data/
+predictions/
+myenv/
+scratch/
+french_difficulty/
+mistral_simplification_trained/
+src/offload/
+src/__pycache__/
+output.log
+
+
