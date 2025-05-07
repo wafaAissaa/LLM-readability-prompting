@@ -1,8 +1,10 @@
 import os
 import argparse
+import time
 from tqdm import tqdm
 from utils_data import load_data
-#from mistralai import Mistral
+from mistralai import Mistral
+from mistralai.models.sdkerror import SDKError
 
 
 labels = {'Mot difficile ou inconnu',
@@ -15,6 +17,20 @@ labels = {'Mot difficile ou inconnu',
           'Ordre syntaxique inhabituel',
           #'Autre',
 }
+
+def call_with_retries(client, model, messages, max_retries=5):
+    for i in range(max_retries):
+        try:
+            return client.chat.complete(model=model, messages=messages)
+        except SDKError as e:
+            if '429' in str(e) or 'rate limit' in str(e).lower():
+                wait = 2 ** i
+                print(f"Rate limited. Retrying in {wait} seconds...")
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Maximum retry attempts exceeded.")
+
 
 def identify_difficult_words(text, reader_level, mistralai=True, model="mistral-large-latest", explication=False):
     base_system_message = (
@@ -53,11 +69,10 @@ def identify_difficult_words(text, reader_level, mistralai=True, model="mistral-
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
-        print(response.message.content)
         return response.message.content
 
 
@@ -101,7 +116,7 @@ def identify_deciphering_issues(text, reader_level, mistralai=True, model="mistr
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -147,7 +162,7 @@ def identify_figurative_expressions(text, reader_level, mistralai=True, model="m
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -197,7 +212,7 @@ def identify_cultural_references(text, reader_level, mistralai=True, model="mist
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -243,7 +258,7 @@ def identify_grammatical_difficulties(text, reader_level, mistralai=True, model=
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -283,7 +298,7 @@ def identify_cohesion_issues(text, reader_level, mistralai=True, model="mistral-
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -326,7 +341,7 @@ def identify_secondary_information(text, reader_level, mistralai=True, model="mi
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -368,7 +383,7 @@ def identify_cohesion_issues(text, reader_level, mistralai=True, model="mistral-
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -412,7 +427,7 @@ def identify_unusual_syntax(text, reader_level, mistralai=True, model="mistral-l
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = mistral_chat.chat.complete(model=model, messages=messages)
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -421,13 +436,10 @@ def identify_unusual_syntax(text, reader_level, mistralai=True, model="mistral-l
 
 def predict(global_file, local_file, mistralai, model, predictions_file, explication=False):
 
-
-
     global_df, local_df = load_data(file_path='.', global_file=global_file, local_file=local_file)
 
     predictions = global_df[['text']].copy()
     for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
-        print('----------------processing row index %s-----------------' % i)
         predictions.at[i,'Mot difficile ou inconnu'] = identify_difficult_words(row['text'], row['classe'], mistralai, model, explication)
         predictions.at[i,'Graphie, problème de déchiffrage'] = identify_deciphering_issues(row['text'], row['classe'], mistralai, model, explication)
         predictions.at[i, 'Figure de style, expression idiomatique'] = identify_figurative_expressions(row['text'], row['classe'], mistralai, model, explication)
@@ -438,15 +450,24 @@ def predict(global_file, local_file, mistralai, model, predictions_file, explica
         predictions.at[i,'Ordre syntaxique inhabituel'] = identify_unusual_syntax(row['text'], row['classe'], mistralai, model, explication)
         predictions.to_csv(predictions_file, sep='\t', index=True)
 
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Analyse de textes")
-    parser.add_argument('--model', type=str, default='mistral-large-latest')
+    parser.add_argument('--model', type=str, default='ollama')
     parser.add_argument('--mistralai', help='Use MistralAI (default: False)')
-    parser.add_argument('--global_file', type=str, default='../data/Qualtrics_Annotations_B.csv')
-    parser.add_argument('--local_file', type=str, default='../data/annotations_completes.xlsx')
-    parser.add_argument('--predictions_file', type=str, default='predictions.csv')
+    parser.add_argument('--global_file', type=str, default='../Qualtrics_Annotations_B.csv')
+    parser.add_argument('--local_file', type=str, default='../annotations_completes.xlsx')
+    parser.add_argument('--predictions_file', type=str, default='../predictions.csv')
     args = parser.parse_args()
+
+    # Modify predictions_file to include the model name
+    base, ext = os.path.splitext(args.predictions_file)
+    args.predictions_file = f"{base}_{args.model}{ext}"
+
+    # Example usage
+    print(f"Predictions will be saved to: {args.predictions_file}")
+
 
     if args.mistralai:
         print('USING MISTRAL MODEL %s' % args.model)
@@ -459,6 +480,12 @@ if __name__ == "__main__":
         from ollama import ChatResponse
 
     predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, explication=False)
+    """global_df, local_df = load_data(file_path='.', global_file=args.global_file, local_file=args.local_file)
+
+    predictions = global_df[['text']].copy()
+    for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
+        response = identify_difficult_words(row['text'], row['classe'], args.mistralai, args.model)
+        print(response)"""
 
 
 
