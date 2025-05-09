@@ -1,7 +1,6 @@
 .ipynb_checkpoints/
 .idea/
 data/
-predictions/
 myenv/
 scratch/
 french_difficulty/
