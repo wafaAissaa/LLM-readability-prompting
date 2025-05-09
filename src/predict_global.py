@@ -11,6 +11,8 @@ from mistralai.models.sdkerror import SDKError
 
 classe2CECR = {"Très Facile": "A1", "Facile": "A2", "Accessible": "B1", "+Complexe": "B2"}
 CECR2classe = {"A1": "Très Facile", "A2": "Facile", "B1": "Accessible", "B2": "+Complexe", "C1": "+Complexe", "C2": "+Complexe"}
+CECRtrunc = {"A1": "A1", "A2": "A2", "B1": "B1", "B2": "B2", "C1": "B2", "C2": "B2"}
+
 
 init_classes = [ "A1", "A2", "B1", "B2"]
 
