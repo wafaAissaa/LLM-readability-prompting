@@ -8,14 +8,22 @@ cefr_order = {'A1': 0, 'A2': 1, 'B1': 2, 'B2': 3}
 
 
 
-predictions_df = pd.read_csv('../predictions/predictions_global_mistral-large-latest.csv', sep='\t', index_col='text_indice')
+predictions_df = pd.read_csv('../predictions/predictions_global_mistral_large_zero.csv', sep='\t', index_col='text_indice')
 print(predictions_df.columns)
 
-predictions_df['prediction_filtered'] = predictions_df['prediction'].str.extract(r'Niveau CECR\s*:\s*\*\*(.*?)\*\*')
-predictions_df['prediction_truc'] = predictions_df['prediction_filtered'].map(CECRtrunc)
+#predictions_df['prediction_filtered'] = predictions_df['prediction'].str.extract(r'Niveau CECR\s*:\s*\*\*(.*?)\*\*')
+
+predictions_df['prediction_filtered'] = predictions_df['prediction'].str.extract(r'\*\*(A1|A2|B1|B2|C1|C2)\*\*')
 
 
 print(predictions_df["prediction_filtered"].value_counts())
+
+predictions_df['prediction_truc'] = predictions_df['prediction_filtered'].map(CECRtrunc)
+
+print(predictions_df["prediction_truc"].value_counts())
+
+
+
 
 cm = confusion_matrix(y_true=predictions_df['classe'], y_pred=predictions_df['prediction_truc'])
 
@@ -32,6 +40,7 @@ cm_df = pd.DataFrame(cm, index=labels, columns=labels)
 # Accuracy (overall)
 accuracy = accuracy_score(predictions_df['classe'], predictions_df['prediction_truc'])
 
+print(predictions_df['classe'])
 # Macro F1 score
 macro_f1 = f1_score(predictions_df['classe'], predictions_df['prediction_truc'], average='macro')
 

@@ -84,31 +84,44 @@ def call_with_retries(client, model, messages, max_retries=5):
     raise RuntimeError("Maximum retry attempts exceeded.")
 
 
-def classify(text, mistralai=True, model="mistral-large-latest"):
+def classify(text, mistralai=True, model="mistral-large-latest", prompt_type="few_shot_cot"):
 
-    messages=[
-                {
-                    'role': 'system',
-                    'content': (
-                        "Vous êtes un expert linguistique spécialisé dans l'évaluation des niveaux de français selon le Cadre européen commun de référence pour les langues (CECR). Votre tâche consiste à classer le texte français suivant dans l'un des niveaux du CECR : A1, A2, B1, B2, C1 ou C2.\n"
-                        '\nExemple :'
-                        'Texte à classifier : "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
-                        'Le texte fourni est composé de phrases simples et courtes, utilisant des structures grammaticales de base et un vocabulaire élémentaire. Selon le Cadre européen commun de référence pour les langues (CECRL), le niveau A1 correspond à la capacité de comprendre et d\'utiliser des expressions familières et quotidiennes ainsi que des énoncés très simples visant à satisfaire des besoins concrets.'
-                        'Niveau CECR: **A1**'
-                    ),
-                },
-                {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot3_v2, },
-                {'role': 'assistant', 'content': cot3_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value3_v2] + "**"},
-                {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot1_v2, },
-                {'role': 'assistant', 'content': cot1_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value1_v2] + "**"},
-                {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot2_v2, },
-                {'role': 'assistant', 'content': cot2_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value2_v2] + "**"},
-                {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot4_v2, },
-                {'role': 'assistant', 'content': cot4_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value4_v2] + "**"},
-                {'role': 'user', 'content': "Classifiez ce texte français :\n" + text, },
-                #{'role': 'assistant', 'content': 'Niveau CECR : **'}
-            ]
-
+    if prompt_type == "few_shot_cot":
+        messages=[
+                    {
+                        'role': 'system',
+                        'content': (
+                            "Vous êtes un expert linguistique spécialisé dans l'évaluation des niveaux de français selon le Cadre européen commun de référence pour les langues (CECR). Votre tâche consiste à classer le texte français suivant dans l'un des niveaux du CECR : A1, A2, B1, B2, C1 ou C2.\n"
+                            '\nExemple :'
+                            'Texte à classifier : "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
+                            'Le texte fourni est composé de phrases simples et courtes, utilisant des structures grammaticales de base et un vocabulaire élémentaire. Selon le Cadre européen commun de référence pour les langues (CECRL), le niveau A1 correspond à la capacité de comprendre et d\'utiliser des expressions familières et quotidiennes ainsi que des énoncés très simples visant à satisfaire des besoins concrets.'
+                            'Niveau CECR: **A1**'
+                        ),
+                    },
+                    {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot3_v2, },
+                    {'role': 'assistant', 'content': cot3_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value3_v2] + "**"},
+                    {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot1_v2, },
+                    {'role': 'assistant', 'content': cot1_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value1_v2] + "**"},
+                    {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot2_v2, },
+                    {'role': 'assistant', 'content': cot2_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value2_v2] + "**"},
+                    {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot4_v2, },
+                    {'role': 'assistant', 'content': cot4_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value4_v2] + "**"},
+                    {'role': 'user', 'content': "Classifiez ce texte français :\n" + text, },
+                    #{'role': 'assistant', 'content': 'Niveau CECR : **'}
+                ]
+    elif prompt_type == "zero":
+        messages=[
+            {
+                'role': 'system',
+                'content': (
+                    "Vous êtes un expert linguistique spécialisé dans l'évaluation des niveaux de français selon le Cadre européen commun de référence pour les langues (CECR). Votre tâche consiste à classer le texte français suivant dans l'un des niveaux du CECR : A1, A2, B1, B2, C1 ou C2.\n"
+                    f"Répond uniquement avec le Niveau CECR"
+                    "Format attendu :\n"
+                    "**Niveau CECR**\n"
+                ),
+            },
+            {'role': 'user', 'content': "Classifiez ce texte français :\n" + text }
+        ]
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
@@ -119,7 +132,7 @@ def classify(text, mistralai=True, model="mistral-large-latest"):
         return response.message.content
 
 
-def predict_global(global_file_path, mistralai, model, predictions_file):
+def predict_global(global_file_path, mistralai, model, prompt_type, predictions_file):
 
     global_df = pd.read_csv(global_file_path, delimiter="\t", index_col="text_indice")
     global_df = global_df[~global_df.index.duplicated(keep='first')]
@@ -128,8 +141,8 @@ def predict_global(global_file_path, mistralai, model, predictions_file):
     global_df = global_df[["text", "classe"]]
 
     for index, row in tqdm(global_df.iterrows(), total=len(global_df)):
-        reponse = classify(row['text'], mistralai=mistralai, model=model)
-        #print(reponse)
+        reponse = classify(row['text'], mistralai=mistralai, model=model, prompt_type=prompt_type)
+        # print(reponse)
         global_df.at[index, 'prediction'] = reponse
         global_df.to_csv(predictions_file, sep='\t', index=True)
 
@@ -139,13 +152,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Analyse de textes")
     parser.add_argument('--model', type=str, default='mistral-large-latest')
     parser.add_argument('--mistralai', help='Use MistralAI (default: False)')
+    parser.add_argument('--prompt_type', type=str, default='zero')
     parser.add_argument('--global_file_path', type=str, default='../data/Qualtrics_Annotations_B.csv')
     parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_global.csv')
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
     base, ext = os.path.splitext(args.predictions_file)
-    args.predictions_file = f"{base}_{args.model}{ext}"
+    args.predictions_file = f"{base}_{args.model}_{args.prompt_type}{ext}"
 
     # Example usage
     print(f"Predictions will be saved to: {args.predictions_file}")
@@ -160,4 +174,4 @@ if __name__ == '__main__':
         from ollama import chat as ollama_chat
         from ollama import ChatResponse
 
-    predict_global(args.global_file_path, args.mistralai, args.model, args.predictions_file)
+    predict_global(args.global_file_path, args.mistralai, args.model, args.prompt_type, args.predictions_file)
