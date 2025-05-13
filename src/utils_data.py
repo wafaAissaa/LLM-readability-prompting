@@ -26,7 +26,7 @@ def load_data(file_path, global_file='Qualtrics_Annotations_B.csv', local_file='
 
     # Match texts and assign labels
     indexes = []
-    print(local_df.columns)
+
     for local_text in local_df['text']:
         matching_indexes = global_df[global_df['text'] == local_text].index.tolist()
         indexes.append(matching_indexes[0] if matching_indexes else -1)
@@ -36,6 +36,10 @@ def load_data(file_path, global_file='Qualtrics_Annotations_B.csv', local_file='
         lambda x: global_df.at[x, 'gold_score_20_label'] if x != -1 else None
     )
     local_df['classe'] = local_df['gold_score_20_label'].map(classe2CECR)
+
+    local_df.set_index("text_indice", inplace=True)
+    local_df = local_df.loc[global_df.index.intersection(local_df.index)]
+
     return global_df, local_df
 
 
@@ -76,3 +80,5 @@ def clean_annotations(row):
                 'text': clean_text,
                 'label': entry['label']
             })
+
+    return preprocessed_data

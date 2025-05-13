@@ -17,7 +17,7 @@ labels = {'Mot difficile ou inconnu',
           #'Autre',
 }
 
-def call_with_retries(client, model, messages, max_retries=5):
+def call_with_retries(client, model, messages, max_retries=10):
     for i in range(max_retries):
         try:
             return client.chat.complete(model=model, messages=messages)
@@ -61,7 +61,8 @@ def classify_difficult_words(token, text, reader_level, mistralai=True, model="m
     ]
 
     if mistralai:
-        mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -72,28 +73,32 @@ def classify_difficult_words(token, text, reader_level, mistralai=True, model="m
 def predict(global_file, local_file, mistralai, model, predictions_file):
 
     global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
+    #print(global_df.columns)
     predictions = local_df[['text']].copy()
+    predictions['Mot difficile ou inconnu'] = None
     for i, row in tqdm(local_df.iterrows(), total=len(local_df)):
         annotations = clean_annotations(row['annotations'])
+        dicos = []
         for annot in annotations:
             if annot['label'] == 'Mot difficile ou inconnu':
                 dico = {'term': annot['text']}
                 pred = classify_difficult_words(annot['text'], row['text'], row['classe'], mistralai,
                                                                                      model)
                 dico['Mot difficile ou inconnu'] = pred
-
+                dicos.append(dico)
+        #print(dicos)
+        predictions.at[i, 'Mot difficile ou inconnu'] = dicos
         predictions.to_csv(predictions_file, sep='\t', index=True)
-
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Analyse de textes")
-    parser.add_argument('--model', type=str, default='ollama')
-    parser.add_argument('--mistralai', help='Use MistralAI (default: False)')
-    parser.add_argument('--global_file', type=str, default='../Qualtrics_Annotations_B.csv')
-    parser.add_argument('--local_file', type=str, default='../annotations_completes.xlsx')
-    parser.add_argument('--predictions_file', type=str, default='../predictions_lcp.csv')
+    parser.add_argument('--model', type=str, default='mistral-large-latest')
+    parser.add_argument('--mistralai', help='Use MistralAI (default: False)', default=True)
+    parser.add_argument('--global_file', type=str, default='Qualtrics_Annotations_B.csv')
+    parser.add_argument('--local_file', type=str, default='annotations_completes.xlsx')
+    parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_lcp.csv')
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
@@ -107,11 +112,11 @@ if __name__ == "__main__":
     if args.mistralai:
         print('USING MISTRAL MODEL %s' % args.model)
         from mistralai import Mistral
-        api_key = os.environ["MISTRAL_API_KEY"]
+        #api_key = os.environ["MISTRAL_API_KEY"]
         # model = "mistral-large-latest"
     else:
         print('USING OLLAMA MODEL %s' % args.model)
         from ollama import chat as ollama_chat
         from ollama import ChatResponse
 
-    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, explication=False)
+    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file)

@@ -8,5 +8,5 @@ mistral_simplification_trained/
 src/offload/
 src/__pycache__/
 output.log
-
+src/lcp.log
 
