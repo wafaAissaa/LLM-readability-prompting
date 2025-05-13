@@ -31,40 +31,34 @@ def call_with_retries(client, model, messages, max_retries=5):
     raise RuntimeError("Maximum retry attempts exceeded.")
 
 
-def identify_difficult_words(text, reader_level, mistralai=True, model="mistral-large-latest", explication=False):
-    base_system_message = (
-        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de textes pour des lecteurs de niveau {reader_level}. "
-        f"Votre tâche est d'identifier les mots difficiles dans le texte fourni. Un mot est considéré comme difficile s'il "
-        f"répond à l'une des caractéristiques suivantes :\n"
+def classify_difficult_words(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+    # Message système
+    system_message = (
+        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité lexicale. "
+        f"Votre tâche est d'évaluer si un mot est complexe pour un niveau de lecteur donné. "
+        f"Un mot est considéré comme difficile s'il répond à l'un de ces critères :\n"
         f"- Mot dont le sens peut ne pas être bien compris par le lecteur.\n"
         f"- Mot potentiellement absent du vocabulaire du lecteur, car appartenant à un domaine spécialisé (ex : technique, scientifique, littéraire).\n"
         f"- Mot appartenant à une langue étrangère.\n"
         f"- Mot appartenant à un registre très soutenu.\n"
         f"- Mot archaïque.\n"
-        f"- Expression dont un seul mot isolé rend toute l’expression difficile.\n"
-        f"Exemples de mots difficiles : un râle, les dogmes, la calvitie, l’ultimate, charnière, un biplan, octroie, quolibets, velléités, anthracite, bore-out, l’odium, etc.\n"
-        f"Exemple d'expression difficile : Il **appert** que.\n\n"
+        f"- Expression dont un seul mot isolé rend toute l'expression difficile.\n"
+        f"Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
     )
 
-    if explication:
-        system_message = base_system_message + (
-            f"Identifiez et listez les mots, expressions difficiles dans le texte suivant. "
-            f"Pour chaque élément identifié, expliquez brièvement pourquoi il est considéré comme tel."
-        )
-    else:
-        system_message = base_system_message + (
-            f"Répond uniquement avec les mots, expressions difficiles dans le texte suivant. "
-            "Format attendu :\n"
-            "**[Mot/Expression]**\n"
-            "**[Mot/Expression]**\n"
-        )
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité de ce mot pour ce niveau de lecteur."
+    )
 
-    user_message = f"Texte à analyser : {text}"
-
+    # Structure des messages
     messages = [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
-        ]
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
 
     if mistralai:
         mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
@@ -73,3 +67,38 @@ def identify_difficult_words(text, reader_level, mistralai=True, model="mistral-
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
         return response.message.content
+
+
+def predict():
+
+    global_df, local_df = load_data(file_path='.', global_file=global_file, local_file=local_file)
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Analyse de textes")
+    parser.add_argument('--model', type=str, default='ollama')
+    parser.add_argument('--mistralai', help='Use MistralAI (default: False)')
+    parser.add_argument('--global_file', type=str, default='../Qualtrics_Annotations_B.csv')
+    parser.add_argument('--local_file', type=str, default='../annotations_completes.xlsx')
+    parser.add_argument('--predictions_file', type=str, default='../predictions.csv')
+    args = parser.parse_args()
+
+    # Modify predictions_file to include the model name
+    base, ext = os.path.splitext(args.predictions_file)
+    args.predictions_file = f"{base}_{args.model}{ext}"
+
+    # Example usage
+    print(f"Predictions will be saved to: {args.predictions_file}")
+
+
+    if args.mistralai:
+        print('USING MISTRAL MODEL %s' % args.model)
+        from mistralai import Mistral
+        api_key = os.environ["MISTRAL_API_KEY"]
+        # model = "mistral-large-latest"
+    else:
+        print('USING OLLAMA MODEL %s' % args.model)
+        from ollama import chat as ollama_chat
+        from ollama import ChatResponse
+
+    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, explication=False)
