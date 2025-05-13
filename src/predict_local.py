@@ -265,45 +265,6 @@ def identify_grammatical_difficulties(text, reader_level, mistralai=True, model=
         return response.message.content
 
 
-def identify_cohesion_issues(text, reader_level, mistralai=True, model="mistral-large-latest", explication=True):
-    base_system_message = (
-        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de textes pour des lecteurs de niveau {reader_level}. "
-        f"Votre tâche est d'identifier les indices de cohésion difficile dans le texte fourni. "
-        f"Les indices de cohésion difficile incluent les difficultés liées à la micro-structure du texte, telles que les inférences et renvois anaphoriques difficiles (pronoms), "
-        f"les connecteurs (tels que 'tout de même', 'cependant', 'rares'), et les inférences. Surlignez uniquement les éléments problématiques.\n\n"
-        f"Exemples d'indices de cohésion difficile :\n"
-        f"- Il faut un grand terrain, un pré ou une plage, et beaucoup de copains car il faut réunir deux équipes, **de 7 sur** **l’herbe ou de 5 sur la plage**. → oui\n"
-        f"- Les rosiers grimpants seront moins taillés **cependant que** les rosiers buissons. → oui\n\n"
-    )
-
-    if explication:
-        system_message = base_system_message + (
-            f"Identifiez et listez les indices de cohésion difficile dans le texte suivant. "
-            f"Pour chaque élément identifié, expliquez brièvement pourquoi il est considéré comme tel."
-        )
-    else:
-        system_message = base_system_message + (
-            f"Répond uniquement avec les indices de cohésion difficile dans le texte suivant."
-            "Format attendu :\n"
-            "**[Mot/Expression]**\n"
-            "**[Mot/Expression]**\n"
-        )
-
-    user_message = f"Texte à analyser : {text}"
-
-    messages = [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": user_message}
-    ]
-
-    if mistralai:
-        mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
-        return response.choices[0].message.content
-    else:
-        response: ChatResponse = ollama_chat(model=model, messages=messages)
-        return response.message.content
-
 
 def identify_secondary_information(text, reader_level, mistralai=True, model="mistral-large-latest", explication=True):
     base_system_message = (

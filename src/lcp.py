@@ -35,7 +35,7 @@ def classify_difficult_words(token, text, reader_level, mistralai=True, model="m
     # Message système
     system_message = (
         f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité lexicale. "
-        f"Votre tâche est d'évaluer si un mot est complexe pour un niveau de lecteur donné. "
+        f"Votre tâche est d'évaluer si un mot est complexe dans le contexte fournis pour un niveau CECR de lecteur donné. "
         f"Un mot est considéré comme difficile s'il répond à l'un de ces critères :\n"
         f"- Mot dont le sens peut ne pas être bien compris par le lecteur.\n"
         f"- Mot potentiellement absent du vocabulaire du lecteur, car appartenant à un domaine spécialisé (ex : technique, scientifique, littéraire).\n"
@@ -68,6 +68,248 @@ def classify_difficult_words(token, text, reader_level, mistralai=True, model="m
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
         return response.message.content
+
+
+def classify_deciphering_issues(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+
+    system_message = (
+        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité de texte. "
+        f"Votre tâche est d'évaluer si un mot ou une expression pose des problèmes de déchiffrage dans le contexte fourni pour un lecteur de niveau CECR donné. "
+        f"Un mot ou une expression est considéré comme posant un problème de déchiffrage s'il répond à l'une des caractéristiques suivantes :\n"
+        f"- Mot dont la graphie peut poser des difficultés d’accès au sens, mais qui reste connu à l’oral. \n"
+        f"- Les nombres écrits d’une manière difficilement lisible pour le niveau CECR du lecteur."
+        f" Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité de déchiffrage de ce mot pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
+
+
+def classify_figurative_expressions(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+
+    system_message = (
+        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité de texte."
+        f"Votre tâche est d'évaluer si une figure de style ou une expression idiomatique est complexe dans le contexte fourni pour un lecteur de niveau CECR donné "
+        f"Les figures de style incluent, mais ne sont pas limitées à, les métaphores, métonymies, personnifications, et ironies. "
+        f"Les expressions idiomatiques sont des suites de mots ou multimots qui, mis ensemble, peuvent ne pas être compris littéralement. "
+        f"Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité de ce mot pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
+
+
+def classify_cultural_references(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+
+    system_message = (
+        f" Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité de texte. "
+        f" Votre tâche est d'évaluer si une référence culturelle est difficile dans le contexte fourni pour un lecteur de niveau CECR donné. "
+        f" Les références culturelles incluent les connaissances antérieures du lecteur telles que les références culturelles, artistiques, littéraires, "
+        f" la culture générale, et la culture numérique. Une référence culturelle est considérée complexes pour un lecteur de niveau CECR donné si elle "
+        f" bloque l’accès à la compréhension.\n\n"
+        f" Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité de ce mot pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
+
+
+def classify_grammatical_difficulties(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+    # Message système
+    system_message = (
+        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité de texte. "
+        f"Votre tâche est d'évaluer si un mot ou une expression pose des difficultés liées à la grammaire dans le contexte fourni pour un lecteur de niveau CECR donné. "
+        f"Les difficultés grammaticales incluent, mais ne sont pas limitées à, les problèmes de temps, mode, "
+        f"concordance, voix passive, absence de déterminants, etc.\n\n"
+        f"Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité grammaticale de ce mot pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
+
+
+def classify_secondary_information(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+
+    system_message = (
+        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité de texte. "
+        f"Votre tâche est d'évaluer si un mot ou une expression est une information secondaire posant des difficultés dans le texte fourni pour un lecteur de niveau CECR donné. "
+        f"Une phrase est considérée comme alourdie par des informations secondaires lorsque ces informations peuvent nuire à la compréhension."
+        f"Les informations seconaidres sont « le surplus » qui pourrait être retiré ou constituer une nouvelle phrase. "
+        f"Cela inclut, par exemple, les incises, les parenthèses, et les subordonnées enchâssées.\n\n"
+        
+        f"Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité de ces mots pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
+
+
+def classify_cohesion_issues(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+    # Message système
+    system_message = (
+        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité de texte. "
+        f"Votre tâche est d'évaluer si un mot ou une expression présente un indice de cohésion difficile dans le texte fourni pour un lecteur de niveau CECR donné. "
+        f"Les indices de cohésion difficile incluent les difficultés liées à la micro-structure du texte, telles que les inférences et renvois anaphoriques difficiles (pronoms), "
+        f"les connecteurs (tels que 'tout de même', 'cependant', 'rares'), et les inférences."
+        f"Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité de cohésion de ce mot pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
+
+
+def classify_unusual_syntax(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
+    # Message système
+    system_message = (
+        f"Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité lexicale. "
+        f"Votre tâche est d'évaluer si une phrase ou partie de phrase a un ordre syntaxique inhabituel dans le texte fourni pour un lecteur de niveau CECR donné. "
+        f"Un ordre syntaxique inhabituel se produit lorsque le non-suivi de l’ordre de base sujet-verbe-complément peut poser un problème de compréhension."
+        f"Répondez uniquement avec le score de complexité : 1 si le mot est complexe, 0 s'il ne l'est pas."
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau du lecteur : {reader_level}\n"
+        f"Mot à évaluer : '{token}'\n"
+        f"Contexte : '{text}'\n"
+        f"Évaluez la complexité de ce mot pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
+
 
 
 def predict(global_file, local_file, mistralai, model, predictions_file):
