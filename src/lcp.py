@@ -73,13 +73,14 @@ def predict(global_file, local_file, mistralai, model, predictions_file):
 
     global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
     predictions = local_df[['text']].copy()
-    for i, row in tqdm(local_df.iterrows(), total=len(global_df)):
+    for i, row in tqdm(local_df.iterrows(), total=len(local_df)):
         annotations = clean_annotations(row['annotations'])
         for annot in annotations:
-            dico = {'term': annot['text']}
-            pred = classify_difficult_words(annot['text'], row['text'], row['classe'], mistralai,
-                                                                                 model)
-            dico['Mot difficile ou inconnu'] = pred
+            if annot['label'] == 'Mot difficile ou inconnu':
+                dico = {'term': annot['text']}
+                pred = classify_difficult_words(annot['text'], row['text'], row['classe'], mistralai,
+                                                                                     model)
+                dico['Mot difficile ou inconnu'] = pred
 
         predictions.to_csv(predictions_file, sep='\t', index=True)
 
