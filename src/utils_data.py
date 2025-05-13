@@ -82,3 +82,32 @@ def clean_annotations(row):
             })
 
     return preprocessed_data
+
+
+
+def map_classes_in_json():
+    # annotations file
+
+    with open('%s/%s' % ('../data', 'annotations_4.json'), 'r') as f:
+        json_data = json.load(f)
+
+    # Qualtrics file, it has to have the mapping of the classe from string to CECR
+    classe2CECR = {"Très Facile": "A1", "Facile": "A2", "Accessible": "B1", "+Complexe": "B2"}
+    global_df = pd.read_csv('%s/%s' % ('../data', 'Qualtrics_Annotations_B.csv'), delimiter="\t",
+                            index_col="text_indice")
+    global_df = global_df[~global_df.index.duplicated(keep='first')]
+    global_df = global_df[['text', 'gold_score_20_label']]
+    global_df['classe'] = global_df['gold_score_20_label'].map(classe2CECR)
+
+    new_json = []
+    for local_text in json_data:
+        new_data = {'annotations': []}
+        matching_indexes = global_df[global_df['text'] == local_text['text']].index.tolist()
+        new_data['text'] = global_df.loc[matching_indexes[0]]['classe'] + ' ' + local_text['text']
+        for annot in local_text['annotations']:
+            new_data['annotations'].append(
+                {'text': annot['text'], 'start': annot['start'] + 3, 'end': annot['end'] + 3, 'label': annot['label'],
+                 'annotators': annot['annotators'], 'confidence': annot['confidence']})
+        new_json.append(new_data)
+
+    return new_json
