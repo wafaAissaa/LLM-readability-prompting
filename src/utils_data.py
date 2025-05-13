@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 from pandas import json_normalize
+import string
 
 classe2CECR = {"Très Facile": "A1", "Facile": "A2", "Accessible": "B1", "+Complexe": "B2"}
 
@@ -53,3 +54,25 @@ def all_annotation(local_df):
     # Concatenate all the DataFrames into a single DataFrame
     df_all_annotations = pd.concat(df_annotations_all.tolist(), ignore_index=True)
     return df_all_annotations
+
+
+
+def clean_annotations(row):
+
+    # Preprocess text and deduplicate
+    preprocessed_data = []
+    seen = set()
+
+    for entry in row:
+        # Preprocess the 'text' value
+        clean_text = entry['text'].strip(string.punctuation + string.whitespace)
+
+        # Create a tuple key to identify duplicates
+        key = (clean_text, entry['label'])
+
+        if key not in seen:
+            seen.add(key)
+            preprocessed_data.append({
+                'text': clean_text,
+                'label': entry['label']
+            })

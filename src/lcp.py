@@ -2,7 +2,7 @@ import os
 import argparse
 import time
 from tqdm import tqdm
-from utils_data import load_data
+from utils_data import load_data, clean_annotations
 from mistralai import Mistral
 from mistralai.models.sdkerror import SDKError
 
@@ -69,9 +69,21 @@ def classify_difficult_words(token, text, reader_level, mistralai=True, model="m
         return response.message.content
 
 
-def predict():
+def predict(global_file, local_file, mistralai, model, predictions_file):
 
-    global_df, local_df = load_data(file_path='.', global_file=global_file, local_file=local_file)
+    global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
+    predictions = local_df[['text']].copy()
+    for i, row in tqdm(local_df.iterrows(), total=len(global_df)):
+        annotations = clean_annotations(row['annotations'])
+        for annot in annotations:
+            dico = {'term': annot['text']}
+            pred = classify_difficult_words(annot['text'], row['text'], row['classe'], mistralai,
+                                                                                 model)
+            dico['Mot difficile ou inconnu'] = pred
+
+        predictions.to_csv(predictions_file, sep='\t', index=True)
+
+
 
 if __name__ == "__main__":
 
@@ -80,7 +92,7 @@ if __name__ == "__main__":
     parser.add_argument('--mistralai', help='Use MistralAI (default: False)')
     parser.add_argument('--global_file', type=str, default='../Qualtrics_Annotations_B.csv')
     parser.add_argument('--local_file', type=str, default='../annotations_completes.xlsx')
-    parser.add_argument('--predictions_file', type=str, default='../predictions.csv')
+    parser.add_argument('--predictions_file', type=str, default='../predictions_lcp.csv')
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
