@@ -111,3 +111,34 @@ def map_classes_in_json():
         new_json.append(new_data)
 
     return new_json
+
+
+"""
+lengths = [
+    len(r['annotators'])
+    for _, row in local_df.iterrows()
+    for r in row['annotations']
+]
+
+# Use value_counts to count frequency of each length
+length_counts = pd.Series(lengths).value_counts()
+
+print(length_counts)
+"""
+
+"""all_values = []
+
+for index, row in local_df.iterrows():
+    # Parse the stringified list of dicts
+    dico_pred_str = predictions.at[index, 'Mot difficile ou inconnu']
+
+    try:
+        dico_pred = ast.literal_eval(dico_pred_str)
+        for item in dico_pred:
+            all_values.append(item['Mot difficile ou inconnu'])
+    except Exception as e:
+        print(f"Error parsing row {index}: {e}")
+
+# Count occurrences
+value_counts = Counter(all_values)
+print(value_counts)"""
