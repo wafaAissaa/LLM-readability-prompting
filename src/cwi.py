@@ -86,10 +86,10 @@ class AnnotatedTextBinary(BaseModel):
     annotations: List[AnnotatedTermBinary]
 
 
-def call_with_retries(client, model, messages, max_retries=10, response_format=AnnotatedText):
+def call_with_retries(client, model, messages, response_format, max_retries=10 ):
     for i in range(max_retries):
         try:
-            return client.chat.parse(model=model, messages=messages, response_format=AnnotatedText)
+            return client.chat.parse(model=model, messages=messages, response_format=response_format)
         except SDKError as e:
             if '429' in str(e) or 'rate limit' in str(e).lower():
                 wait = 2 ** i
@@ -174,7 +174,7 @@ def classify_binary_words(text, reader_level, mistralai=True, model="mistral-lar
         # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
         mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
         response = call_with_retries(client=mistral_chat, model=model, messages=messages,
-                                     response_format=AnnotatedText)
+                                     response_format=AnnotatedTextBinary)
         return response.choices[0].message.content
     else:
         response: ChatResponse = ollama_chat(model=model, messages=messages)
@@ -501,7 +501,7 @@ if __name__ == "__main__":
         print(f"  {key}: {value}")
 
     base, ext = os.path.splitext(args.predictions_file)
-    log_file = f"{"../logs/"}{base}{".log"}"
+    log_file = f"../logs/cwi_{args.labels}_{args.model}.log"
     print(log_file)
     with open(log_file, "a") as f:
         f.write("\n\n===== New Run =====\n")
