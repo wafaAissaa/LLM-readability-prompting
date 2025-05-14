@@ -6,6 +6,7 @@ from utils_data import load_data, clean_annotations
 from mistralai import Mistral
 from mistralai.models.sdkerror import SDKError
 from pydantic import BaseModel
+from typing import List, Literal, Union
 
 labels = {'Mot difficile ou inconnu',
           'Graphie, problème de déchiffrage',
@@ -34,35 +35,27 @@ definitions = {'Mot difficile ou inconnu':  "Un mot est considéré comme diffic
         'Figure de style, expression idiomatique' : "Les figures de style incluent, mais ne sont pas limitées à, les métaphores, métonymies, personnifications, et ironies. "
         "Les expressions idiomatiques sont des suites de mots ou multimots qui, mis ensemble, peuvent ne pas être compris littéralement. \n",
 
-          'Référence culturelle difficile': " Les références culturelles incluent les connaissances antérieures du lecteur telles que les références culturelles, artistiques, littéraires, "
+        'Référence culturelle difficile': " Les références culturelles incluent les connaissances antérieures du lecteur telles que les références culturelles, artistiques, littéraires, "
           " la culture générale, et la culture numérique. Une référence culturelle est considérée complexes pour un lecteur de niveau CECR donné si elle "
           " bloque l’accès à la compréhension.\n",
 
 
-          'Difficulté liée à la grammaire': "Les difficultés grammaticales incluent, mais ne sont pas limitées à, les problèmes de temps, mode, "
+        'Difficulté liée à la grammaire': "Les difficultés grammaticales incluent, mais ne sont pas limitées à, les problèmes de temps, mode, "
         "concordance, voix passive, absence de déterminants, etc.\n",
 
-          "Trop d'informations secondaires": " Une phrase est considérée comme alourdie par des informations secondaires lorsque ces informations peuvent nuire à la compréhension."
+        "Trop d'informations secondaires": " Une phrase est considérée comme alourdie par des informations secondaires lorsque ces informations peuvent nuire à la compréhension."
         "Les informations seconaidres sont « le surplus » qui pourrait être retiré ou constituer une nouvelle phrase. "
         "Cela inclut, par exemple, les incises, les parenthèses, et les subordonnées enchâssées.\n",
 
 
-          "Indice de cohésion difficile (connecteur, pronom, inférence)": "Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité de texte. "
-        f"Votre tâche est d'évaluer si un mot ou une expression présente un indice de cohésion difficile dans le texte fourni pour un lecteur de niveau CECR donné. "
-        f"Les indices de cohésion difficile incluent les difficultés liées à la micro-structure du texte, telles que les inférences et renvois anaphoriques difficiles (pronoms), "
+        "Indice de cohésion difficile (connecteur, pronom, inférence)": "Les indices de cohésion difficile incluent les difficultés liées à la micro-structure du texte, telles que les inférences et renvois anaphoriques difficiles (pronoms), "
         f"les connecteurs (tels que 'tout de même', 'cependant', 'rares'), et les inférences.\n",
 
-          'Ordre syntaxique inhabituel': "Un ordre syntaxique inhabituel se produit lorsque le non-suivi de l’ordre de base sujet-verbe-complément peut poser un problème de compréhension. \n",
+        'Ordre syntaxique inhabituel': "Un ordre syntaxique inhabituel se produit lorsque le non-suivi de l’ordre de base sujet-verbe-complément peut poser un problème de compréhension. \n",
 
 }
 
-class Book(BaseModel):
-    name: str
-    authors: list[str]
 
-
-from pydantic import BaseModel
-from typing import List, Literal, Union
 
 class AnnotatedTerm(BaseModel):
     term: str
@@ -426,19 +419,10 @@ def predict(global_file, local_file, mistralai, model, predictions_file):
     global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
     #print(global_df.columns)
     predictions = local_df[['text']].copy()
-    predictions['Mot difficile ou inconnu'] = None
-    for i, row in tqdm(local_df.iterrows(), total=len(local_df)):
-        annotations = clean_annotations(row['annotations'])
-        dicos = []
-        for annot in annotations:
-            if annot['label'] == 'Mot difficile ou inconnu':
-                dico = {'term': annot['text']}
-                pred = classify_difficult_words(annot['text'], row['text'], row['classe'], mistralai,
-                                                                                     model)
-                dico['Mot difficile ou inconnu'] = pred
-                dicos.append(dico)
-        #print(dicos)
-        predictions.at[i, 'Mot difficile ou inconnu'] = dicos
+    predictions['predictions'] = None
+
+    for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
+        predictions.at[i, 'predictions'] = classify_all_words(row['text'], row['classe'], mistralai=mistralai, model=model)
         predictions.to_csv(predictions_file, sep='\t', index=True)
 
 
@@ -449,7 +433,7 @@ if __name__ == "__main__":
     parser.add_argument('--mistralai', help='Use MistralAI (default: False)', default=True)
     parser.add_argument('--global_file', type=str, default='Qualtrics_Annotations_B.csv')
     parser.add_argument('--local_file', type=str, default='annotations_completes.xlsx')
-    parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi.csv')
+    parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi_all.csv')
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
@@ -469,10 +453,4 @@ if __name__ == "__main__":
         from ollama import chat as ollama_chat
         from ollama import ChatResponse
 
-    # predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file)
-    global_df, local_df = load_data(file_path='../data', global_file=args.global_file, local_file=args.local_file)
-
-
-    for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
-        rep = classify_all_words(row['text'], row['classe'], mistralai=True, model="mistral-large-latest")
-        print(rep)
+    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file)
