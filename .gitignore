@@ -9,4 +9,4 @@ src/offload/
 src/__pycache__/
 output.log
 src/lcp.log
-
+src/cwi.log

@@ -1,14 +1,17 @@
 import os
 import argparse
 import time
+import json
 from tqdm import tqdm
 from utils_data import load_data, clean_annotations
 from mistralai import Mistral
 from mistralai.models.sdkerror import SDKError
 from pydantic import BaseModel
 from typing import List, Literal, Union
+import logging
 
-labels = {'Mot difficile ou inconnu',
+
+types = {'Mot difficile ou inconnu',
           'Graphie, problème de déchiffrage',
           'Figure de style, expression idiomatique',
           'Référence culturelle difficile',
@@ -75,6 +78,14 @@ class AnnotatedText(BaseModel):
     annotations: List[AnnotatedTerm]
 
 
+class AnnotatedTermBinary(BaseModel):
+    term: str
+    label: List[ Literal['1', '0'] ]
+
+class AnnotatedTextBinary(BaseModel):
+    annotations: List[AnnotatedTermBinary]
+
+
 def call_with_retries(client, model, messages, max_retries=10, response_format=AnnotatedText):
     for i in range(max_retries):
         try:
@@ -96,7 +107,7 @@ def classify_all_words(text, reader_level, mistralai=True, model="mistral-large-
 
     system_message = (
             "Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité lexicale. "
-            "Votre tâche est d'évaluer si un mot ou groupe de mots est complexe dans le contexte fourni, en fonction du niveau CECR du lecteur cible. "
+            "Votre tâche est d'évaluer si un mot est complexe dans le contexte fourni, en fonction du niveau CECR du lecteur cible. "
             "Un mot est considéré comme complexe s’il présente une ou plusieurs des difficultés suivantes, selon les définitions ci-dessous :\n\n"
             + "\n".join([f"- \"{k}\" : {v}" for k, v in definitions.items()]) +
             "\nImportant : un même mot complexe peut présenter plusieurs types de difficulté simultanément. "
@@ -107,7 +118,6 @@ def classify_all_words(text, reader_level, mistralai=True, model="mistral-large-
             "- \"label\" : la liste des types de difficulté pertinents parmi ceux listés ci-dessus si le mot est jugé complexe, sinon \"0\"\n\n"
     )
 
-    print(system_message)
     # Message utilisateur
     user_message = (
         f"Niveau CECR du lecteur : {reader_level}\n"
@@ -131,6 +141,44 @@ def classify_all_words(text, reader_level, mistralai=True, model="mistral-large-
         response: ChatResponse = ollama_chat(model=model, messages=messages)
         return response.message.content
 
+
+def classify_binary_words(text, reader_level, mistralai=True, model="mistral-large-latest"):
+
+    # Multilable classification
+    # classfication per single word
+
+    system_message = (
+            "Vous êtes un assistant linguistique spécialisé dans l'analyse de la complexité lexicale. "
+            "Votre tâche est d'évaluer si un mot est complexe dans le contexte fourni, en fonction du niveau CECR du lecteur cible. "
+            "Un mot est considéré comme complexe s’il présente une ou plusieurs des difficultés suivantes, selon les définitions ci-dessous :\n\n"
+            + "\n".join([f"- \"{k}\" : {v}" for k, v in definitions.items()]) +
+            "Format attendu : une liste d’objets JSON, un par mot, contenant les champs suivants :\n"
+            "- \"term\" : le mot analysé\n"
+            "- \"label\" : 1 si le mot est jugé complexe, sinon \"0\"\n\n"
+    )
+
+    # Message utilisateur
+    user_message = (
+        f"Niveau CECR du lecteur : {reader_level}\n"
+        f"Texte : '{text}'\n"
+        f"Évaluez la complexité de chacun des mots de ce texte pour ce niveau de lecteur."
+    )
+
+    # Structure des messages
+    messages = [
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_message}
+    ]
+
+    if mistralai:
+        # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
+        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=mistral_chat, model=model, messages=messages,
+                                     response_format=AnnotatedText)
+        return response.choices[0].message.content
+    else:
+        response: ChatResponse = ollama_chat(model=model, messages=messages)
+        return response.message.content
 
 
 def classify_difficult_words(token, text, reader_level, mistralai=True, model="mistral-large-latest"):
@@ -414,31 +462,53 @@ def classify_unusual_syntax(token, text, reader_level, mistralai=True, model="mi
 
 
 
-def predict(global_file, local_file, mistralai, model, predictions_file):
+def predict(global_file, local_file, mistralai, model, predictions_file, labels):
 
     global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
     #print(global_df.columns)
     predictions = local_df[['text']].copy()
     predictions['predictions'] = None
 
+    base, ext = os.path.splitext(predictions_file)
+
     for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
-        predictions.at[i, 'predictions'] = classify_all_words(row['text'], row['classe'], mistralai=mistralai, model=model)
+        if labels == "all":
+            predictions.at[i, 'predictions'] = classify_all_words(row['text'], row['classe'], mistralai=mistralai, model=model)
+        elif labels == "binary":
+            predictions.at[i, 'predictions'] = classify_binary_words(row['text'], row['classe'], mistralai=mistralai, model=model)
+
         predictions.to_csv(predictions_file, sep='\t', index=True)
+        predictions.to_json(f"{base}{".json"}", orient="index", indent=2, force_ascii=False)
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Analyse de textes")
     parser.add_argument('--model', type=str, default='mistral-large-latest')
-    parser.add_argument('--mistralai', help='Use MistralAI (default: False)', default=True)
+    parser.add_argument('--mistralai', help='Use MistralAI (default: False)')
     parser.add_argument('--global_file', type=str, default='Qualtrics_Annotations_B.csv')
     parser.add_argument('--local_file', type=str, default='annotations_completes.xlsx')
-    parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi_all.csv')
+    parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi.csv')
+    parser.add_argument('--labels', type=str, default='all')
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
     base, ext = os.path.splitext(args.predictions_file)
-    args.predictions_file = f"{base}_{args.model}{ext}"
+    args.predictions_file = f"{base}_{args.labels}_{args.model}{ext}"
+
+    print("Parsed arguments:")
+    for key, value in vars(args).items():
+        print(f"  {key}: {value}")
+
+    base, ext = os.path.splitext(args.predictions_file)
+    log_file = f"{"../logs/"}{base}{".log"}"
+    print(log_file)
+    with open(log_file, "a") as f:
+        f.write("\n\n===== New Run =====\n")
+        f.write("Arguments:\n")
+        json.dump(vars(args), f, indent=2)
+        f.write("\n\n")
+
 
     # Example usage
     print(f"Predictions will be saved to: {args.predictions_file}")
@@ -453,4 +523,4 @@ if __name__ == "__main__":
         from ollama import chat as ollama_chat
         from ollama import ChatResponse
 
-    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file)
+    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, args.labels)
