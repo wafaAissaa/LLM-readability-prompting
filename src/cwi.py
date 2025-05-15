@@ -3,6 +3,7 @@ import argparse
 import time
 import json
 from tqdm import tqdm
+import pandas as pd
 from utils_data import load_data, clean_annotations
 from mistralai import Mistral
 from mistralai.models.sdkerror import SDKError
@@ -462,23 +463,39 @@ def classify_unusual_syntax(token, text, reader_level, mistralai=True, model="mi
 
 
 
-def predict(global_file, local_file, mistralai, model, predictions_file, labels):
+def predict(global_file, local_file, mistralai, model, predictions_file, labels, checkpoint):
 
     global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
     #print(global_df.columns)
-    predictions = local_df[['text']].copy()
-    predictions['predictions'] = None
 
-    base, ext = os.path.splitext(predictions_file)
+    if checkpoint:
+        print("LOADING CHECKPOINT FROM: %s ------------------ " % predictions_file)
+        predictions = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
+        first_none_pos = predictions["predictions"].isna().idxmax()  # gives index label
+        first_none_loc = predictions.index.get_loc(first_none_pos)  # get integer position
 
-    for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
+        # Apply json.loads to all predictions before the first None
+        predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')] = (
+            predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')]
+            .apply(json.loads)
+        )
+
+    else:
+        print("STARTING FROM THE BEGINNING -----------------------------------")
+        predictions = global_df[['text']].copy()
+        predictions['predictions'] = None
+        first_none_loc = 0
+
+    #base, ext = os.path.splitext(predictions_file)
+
+    for i, row in tqdm(global_df.iloc[first_none_loc:].iterrows(), total=len(global_df), initial=first_none_loc):
         if labels == "all":
             predictions.at[i, 'predictions'] = classify_all_words(row['text'], row['classe'], mistralai=mistralai, model=model)
         elif labels == "binary":
             predictions.at[i, 'predictions'] = classify_binary_words(row['text'], row['classe'], mistralai=mistralai, model=model)
 
         predictions.to_csv(predictions_file, sep='\t', index=True)
-        predictions.to_json(f"{base}{".json"}", orient="index", indent=2, force_ascii=False)
+        #predictions.to_json(f"{base}{".json"}", orient="index", indent=2, force_ascii=False)
 
 
 if __name__ == "__main__":
@@ -490,6 +507,7 @@ if __name__ == "__main__":
     parser.add_argument('--local_file', type=str, default='annotations_completes.xlsx')
     parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi.csv')
     parser.add_argument('--labels', type=str, default='all')
+    parser.add_argument('--checkpoint', type=str, default=True)
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
@@ -523,4 +541,4 @@ if __name__ == "__main__":
         from ollama import chat as ollama_chat
         from ollama import ChatResponse
 
-    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, args.labels)
+    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, args.labels, args.checkpoint)

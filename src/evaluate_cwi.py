@@ -4,8 +4,25 @@ from utils_data import load_data
 from collections import Counter
 import ast
 
+predictions_file = "../predictions/predictions_cwi_binary_mistral-large-latest.csv"
 
-file_path = "../data"
+predictions = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
+first_none_pos = predictions["predictions"].isna().idxmax()  # gives index label
+first_none_loc = predictions.index.get_loc(first_none_pos)  # get integer position
+
+print(first_none_pos)
+print(first_none_loc)
+
+# Apply json.loads to all predictions before the first None
+predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')] = (
+    predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')]
+    .apply(json.loads)
+)
+
+print(predictions)
+
+
+"""file_path = "../data"
 local_file = "annotations_5.json"
 global_file='Qualtrics_Annotations_B.csv'
 
@@ -39,7 +56,7 @@ predictions.loc[predictions.index[:4], 'predictions'] = (
 
 print(predictions.loc[predictions.index[:4], 'predictions'] )
 
-
+"""
 '''
 word_lengths = []
 
