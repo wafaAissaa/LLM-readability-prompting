@@ -530,7 +530,6 @@ if __name__ == "__main__":
         json.dump(vars(args), f, indent=2)
         f.write("\n\n")
 
-
     # Example usage
     print(f"Predictions will be saved to: {args.predictions_file}")
 
