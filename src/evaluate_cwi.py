@@ -4,6 +4,8 @@ from utils_data import load_data
 from collections import Counter
 import ast
 
+
+
 predictions_file = "../predictions/predictions_cwi_binary_mistral-large-latest.csv"
 
 predictions = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
@@ -14,10 +16,18 @@ print(first_none_pos)
 print(first_none_loc)
 
 # Apply json.loads to all predictions before the first None
-predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')] = (
+'''predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')] = (
     predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')]
     .apply(json.loads)
-)
+)'''
+
+for i, row in predictions.iterrows():
+    print(i)
+    print(row['predictions'])
+    #json.loads(row['predictions'])
+    break
+
+
 
 print(predictions)
 

@@ -473,10 +473,13 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
         predictions = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
         first_none_pos = predictions["predictions"].isna().idxmax()  # gives index label
         first_none_loc = predictions.index.get_loc(first_none_pos)  # get integer position
+        print("starting from index %s at location %s" %(first_none_pos, first_none_loc))
+
+        first_bad_format_loc = predictions.index.get_loc(2100) # WARNING DELETE THIS LATER !!
 
         # Apply json.loads to all predictions before the first None
-        predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')] = (
-            predictions.iloc[:first_none_loc, predictions.columns.get_loc('predictions')]
+        predictions.iloc[first_bad_format_loc:first_none_loc, predictions.columns.get_loc('predictions')] = (
+            predictions.iloc[first_bad_format_loc:first_none_loc, predictions.columns.get_loc('predictions')]
             .apply(json.loads)
         )
 
@@ -492,10 +495,10 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
         if labels == "all":
             predictions.at[i, 'predictions'] = classify_all_words(row['text'], row['classe'], mistralai=mistralai, model=model)
         elif labels == "binary":
-            predictions.at[i, 'predictions'] = classify_binary_words(row['text'], row['classe'], mistralai=mistralai, model=model)
+            predictions.at[i, 'predictions'] = json.loads(classify_binary_words(row['text'], row['classe'], mistralai=mistralai, model=model))
 
         predictions.to_csv(predictions_file, sep='\t', index=True)
-        #predictions.to_json(f"{base}{".json"}", orient="index", indent=2, force_ascii=False)
+        # predictions.to_json(f"{base}{".json"}", orient="index", indent=2, force_ascii=False)
 
 
 if __name__ == "__main__":
