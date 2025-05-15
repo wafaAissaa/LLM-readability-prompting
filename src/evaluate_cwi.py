@@ -12,26 +12,40 @@ annotations_file = "../data/annotations_5.json"
 annotations = json.load(open(annotations_file))
 annotations_df = pd.DataFrame(annotations)
 
-def find_term_positions(text, terms):
+def find_term_positions(text, terms, annotations):
     positions = []
     cursor = 0  # current search starting point
-
+    text = text.lower()
     for term in terms:
         # Find the term starting at the current cursor
+        term = term.lower()
         start = text.find(term, cursor)
-        if start == -1:
-            raise ValueError(f"Term '{term}' not found in text starting at position {cursor}.")
+        if start == -1 and text.find(term) != -1:
+            """print('find ', text.find(term))
+            print([(i, i + len(term)) for i in range(len(text)) if text.startswith(term, i)])
+            print('term, cursor ', term, cursor)
+            print('here')
+            print(text, terms)
+            print(annotations)
+            print(f"Term '{term}' not found in text starting at position {cursor}.")"""
+        elif text.find(term) == -1:
+            #print(text)
+            #print(annotations)
+            #print(f"Term '{term}' not found in text at all.")
+            start = cursor
         end = start + len(term)
+        print(cursor)
+        print((term, start, end, text.find(term) ))
         positions.append((term, start, end))
-        cursor = end  # move cursor forward to avoid repeated match of same term
+        cursor = end - 4 if end > 4 else end # move cursor forward to avoid repeated match of same term
 
     return positions
 
 
 
-print(len(annotations_df))
+#print(len(annotations_df))
 
-print(len(predictions_df))
+#print(len(predictions_df))
 indexes = []
 for text in annotations_df['text']:
     matching_indexes = predictions_df[predictions_df['text'] == text].index.tolist()
@@ -42,39 +56,84 @@ annotations_df['text_indice'] = indexes
 
 annotations_df.set_index('text_indice', inplace=True)
 
-print(annotations_df)
-
-
+#print(annotations_df)
 
 for index, row in predictions_df.iterrows():
-    predictions = predictions_df.at[index, 'predictions']
-    positions = find_term_positions(row['text'], [t['term'] for t in predictions])
-    for annotation in annotations_df.at[index, 'annotations']:
+    if index == 1213: continue
+    print('index', index)
+    if index != 1793: continue
+    print(row['text'])
+    """for i, c in enumerate(row['text']):
+        print(i, c)
+    print()"""
 
-        start_token_idx = -1
-        end_token_idx = -1
+    predictions = ast.literal_eval(predictions_df.at[index, 'predictions'])['annotations']
+    annotations = annotations_df.at[index, 'annotations']
+    positions = find_term_positions(annotations_df.at[index, 'text'], [t['term'] for t in predictions], annotations)
 
+    '''for annotation in annotations:
+        found = 0
         start_char_idx, end_char_idx = annotation['start'], annotation['end']
-
         for i, prediction in enumerate(predictions):
             term, start, end = positions[i]
+            if start >= start_char_idx and end <= end_char_idx:
+                found = 1
+                prediction['gt'] = ['1']'''
 
-            if start_token_idx == -1 and start <= start_char_idx <= end:
-                start_token_idx = i
-            if end_token_idx == -1 and start_token_idx != -1 and start <= end_char_idx <= end:
-                end_token_idx = i
-                prediction['gt'] = annotation['label']
+
+
+
+
+
+
+
+    """
+
+    for annotation in annotations:
+
+        for pred in predicitions:
+            found = False
+            pred['gt'] = []
+            if pred['term'] == annotation['text']:
+                pred['gt'].append(annotation['label'])
+                found = True
                 break
-            if start_token_idx == -1 or end_token_idx == -1:
-                print("[WARNING] Annotation not found in tokenized text, maybe because of truncation")
-                print("Annotation: ", annotation)
+            if ' '+pred['term']+' ' in annotation['text']:
+                print("INSIDE", pred['term'],' in ' ,annotation['text'])
+                pred['gt'].append(annotation['label'])
+                found = True
+                break
+        if not found:
+            print('NOT FOUND', annotation['text'])
+    """
 
-            prediction['gt'] = ['0']
-    print(prediciton)
-    print()
-    print(annotations_df.at[index, 'annotations'])
-    break
 
+    """for pred in predicitions:
+        found = False
+
+        pred['gt'] = []
+
+        for annotation in annotations:
+            if pred['term'] == annotation['text']:
+                pred['gt'].append(annotation['label'])
+                found = True
+                break
+            if pred['term'] in annotation['text']:
+                print("INSIDE", pred['term'], annotation['text'])
+                pred['gt'].append(annotation['label'])
+                found = True
+                break
+            if not found:
+                print('NOT FOUND', pred['term'])
+        break"""
+
+
+
+
+
+
+
+    #print([p for p in predictions if p.get('gt') == ['1']])
 
 def add_tokenization_mapping(text, annotations, tokenizer, verbose=False):
     '''
