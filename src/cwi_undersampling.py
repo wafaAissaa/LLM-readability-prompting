@@ -6,7 +6,8 @@ import time
 import json
 from tqdm import tqdm
 import pandas as pd
-from utils_data import load_data, clean_annotations, sample_negative_examples
+from utils_data import load_data, clean_annotations, sample_negative_examples, \
+    sample_negative_examples_with_length_match
 from mistralai import Mistral
 from mistralai.models.sdkerror import SDKError
 from pydantic import BaseModel
@@ -197,21 +198,24 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
     if checkpoint:
         print("LOADING CHECKPOINT FROM: %s ------------------ " % predictions_file)
         predictions = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
+        predictions.drop(index=1213, inplace=True)
         first_none_pos = predictions["predictions"].isna().idxmax()  # gives index label
         first_none_loc = predictions.index.get_loc(first_none_pos)  # get integer position
         print("starting from index %s at location %s" %(first_none_pos, first_none_loc))
 
-        first_bad_format_loc = predictions.index.get_loc(2100) # WARNING DELETE THIS LATER !!
+        #first_bad_format_loc = predictions.index.get_loc(2100) # WARNING DELETE THIS LATER !!
 
         # Apply json.loads to all predictions before the first None
-        predictions.iloc[first_bad_format_loc:first_none_loc, predictions.columns.get_loc('predictions')] = (
+        """predictions.iloc[first_bad_format_loc:first_none_loc, predictions.columns.get_loc('predictions')] = (
             predictions.iloc[first_bad_format_loc:first_none_loc, predictions.columns.get_loc('predictions')]
             .apply(json.loads)
-        )
+        )"""
+
 
     else:
         print("STARTING FROM THE BEGINNING -----------------------------------")
         predictions = global_df[['text']].copy()
+        predictions.drop(index=1213, inplace=True)
         predictions['predictions'] = None
         first_none_loc = 0
 
@@ -226,7 +230,11 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
         annotations = sorted(set(annot['text'] for annot in annotations))
         positives = list(annotations)
 
-        negatives = sample_negative_examples(row['text'], positives)
+        if args.sampling == "word":
+            negatives = sample_negative_examples(row['text'], positives)
+        elif args.sampling == "mwe":
+            negatives = sample_negative_examples_with_length_match(row['text'], positives)
+
 
         all_tokens = positives + negatives
         random.seed(42)
@@ -254,18 +262,19 @@ if __name__ == "__main__":
     parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi_under.csv')
     parser.add_argument('--labels', type=str, default='all')
     parser.add_argument('--checkpoint', type=str, default='')
+    parser.add_argument('--sampling', type=str, default='word')
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
     base, ext = os.path.splitext(args.predictions_file)
-    args.predictions_file = f"{base}_{args.labels}_{args.model}{ext}"
+    args.predictions_file = f"{base}_{args.labels}_{args.sampling}_{args.model}{ext}"
 
     print("Parsed arguments:")
     for key, value in vars(args).items():
         print(f"  {key}: {value}")
 
     base, ext = os.path.splitext(args.predictions_file)
-    log_file = f"../logs/cwi_under_{args.labels}_{args.model}.log"
+    log_file = f"../logs/cwi_under_{args.labels}_{args.sampling}_{args.model}.log"
     print(log_file)
     with open(log_file, "a") as f:
         f.write("\n\n===== New Run =====\n")

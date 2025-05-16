@@ -125,7 +125,6 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
     annotations = local_df.at[i, "annotations"]
 
 
-
     annotations = sorted(set(annot['text'] for annot in annotations))
     positives = list(annotations)
     predictions = ast.literal_eval(predictions_df.at[i, "predictions"])
@@ -159,6 +158,12 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
                 prediction['gt'] = 1
             else:
                 prediction['gt'] = 0
+
+    print(row['text'])
+    for prediction in predictions:
+        print(prediction)
+    for annot in annotations:
+        print(annot)
 
 
     predictions_df.at[i, "predictions_gt"] = predictions

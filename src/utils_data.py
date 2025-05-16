@@ -166,6 +166,106 @@ def sample_negative_examples(text, positive_tokens):
     return negative_tokens
 
 
+from collections import Counter
+import random
+import re
+
+
+def sample_negative_examples_with_length_match(text: str, positive_tokens: list[str]) -> list[str]:
+    text_lower = text.lower()
+    positive_tokens_lower = [pt.lower() for pt in positive_tokens]
+
+    # Track positive spans to avoid overlap
+    used_spans = []
+    for token in positive_tokens_lower:
+        for match in re.finditer(re.escape(token), text_lower):
+            used_spans.append((match.start(), match.end()))
+
+    def is_overlapping(start, end):
+        return any(not (end <= s or start >= e) for s, e in used_spans)
+
+    # Tokenize for negative candidate generation
+    tokenized = text.split()
+    tokenized_lower = text_lower.split()
+
+    # Count how many negative examples we want per phrase length
+    pos_lengths = [len(pt.split()) for pt in positive_tokens]
+    pos_length_counts = Counter(pos_lengths)
+
+    negative_candidates_by_length = {l: [] for l in pos_length_counts}
+
+    for n in pos_length_counts:
+        for i in range(len(tokenized) - n + 1):
+            span = ' '.join(tokenized[i:i+n])
+            span_lower = ' '.join(tokenized_lower[i:i+n])
+            start = text_lower.find(span_lower)
+            if start == -1:
+                continue
+            end = start + len(span_lower)
+
+            if is_overlapping(start, end):
+                continue
+
+            if span_lower not in positive_tokens_lower:
+                negative_candidates_by_length[n].append(span)
+
+    # Sample per length
+    sampled_negatives = []
+    for length, count in pos_length_counts.items():
+        candidates = negative_candidates_by_length[length]
+        sampled = random.sample(candidates, min(count, len(candidates)))
+        sampled_negatives.extend(sampled)
+
+    return sampled_negatives
+
+def sample_negative_examples_with_length_match(text: str, positive_tokens: list[str]) -> list[str]:
+    text_lower = text.lower()
+    positive_tokens_lower = [pt.lower() for pt in positive_tokens]
+
+    # Track positive spans to avoid overlap
+    used_spans = []
+    for token in positive_tokens_lower:
+        for match in re.finditer(re.escape(token), text_lower):
+            used_spans.append((match.start(), match.end()))
+
+    def is_overlapping(start, end):
+        return any(not (end <= s or start >= e) for s, e in used_spans)
+
+    # Tokenize for negative candidate generation
+    tokenized = text.split()
+    tokenized_lower = text_lower.split()
+
+    # Count how many negative examples we want per phrase length
+    pos_lengths = [len(pt.split()) for pt in positive_tokens]
+    pos_length_counts = Counter(pos_lengths)
+
+    negative_candidates_by_length = {l: [] for l in pos_length_counts}
+
+    for n in pos_length_counts:
+        for i in range(len(tokenized) - n + 1):
+            span = ' '.join(tokenized[i:i+n])
+            span_lower = ' '.join(tokenized_lower[i:i+n])
+            start = text_lower.find(span_lower)
+            if start == -1:
+                continue
+            end = start + len(span_lower)
+
+            if is_overlapping(start, end):
+                continue
+
+            if span_lower not in positive_tokens_lower:
+                negative_candidates_by_length[n].append(span)
+
+    # Sample per length
+    sampled_negatives = []
+    for length, count in pos_length_counts.items():
+        candidates = negative_candidates_by_length[length]
+        random.seed(42)
+        sampled = random.sample(candidates, min(count, len(candidates)))
+        sampled_negatives.extend(sampled)
+
+    return sampled_negatives
+
 """
 lengths = [
     len(r['annotators'])
