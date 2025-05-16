@@ -55,7 +55,7 @@ def sample_negative_examples_with_length_match(text: str, positive_tokens: list[
 
     return sampled_negatives
 
-global_file = 'Qualtrics_Annotations_B.csv'
+"""global_file = 'Qualtrics_Annotations_B.csv'
 local_file = 'annotations_completes_2.xlsx'
 
 global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
@@ -97,5 +97,38 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
         print("Warning: Token length distributions do not match.")
         print(f"Positives: {Counter(len_pos)}")
         print(f"Negatives: {Counter(len_neg)}")
+"""
 
+import pandas as pd
 
+# Example: df1 and df2
+df1 = pd.read_excel("../data/annotations_completes.xlsx")#, sep='\t', index_col="text_indice")
+df2 = pd.read_excel("../data/annotations_completes_2.xlsx")#, sep='\t', index_col="text_indice")
+
+if df1.shape != df2.shape:
+    print(f"Warning: DataFrames have different shapes: {df1.shape} vs {df2.shape}")
+
+comparison = df1.eq(df2)
+mismatches = ~comparison
+
+if mismatches.any().any():
+    print("Differences found:")
+    diff_report = []
+
+    # Use .index and .columns to get labels, not just positions
+    mismatch_positions = mismatches.stack()[lambda x: x].index  # MultiIndex of mismatches
+
+    for row_label, col_label in mismatch_positions:
+        val1 = df1.at[row_label, col_label]
+        val2 = df2.at[row_label, col_label]
+        diff_report.append({
+            "row": row_label,
+            "column": col_label,
+            "df1_value": val1,
+            "df2_value": val2
+        })
+
+    diff_df = pd.DataFrame(diff_report)
+    print(diff_df)
+else:
+    print("No differences found.")

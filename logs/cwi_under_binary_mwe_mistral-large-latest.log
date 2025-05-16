@@ -1,0 +1,30 @@
+
+
+===== New Run =====
+Arguments:
+{
+  "model": "mistral-large-latest",
+  "mistralai": true,
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_mistral-large-latest.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model": "mistral-large-latest",
+  "mistralai": true,
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_mistral-large-latest.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe"
+}
+

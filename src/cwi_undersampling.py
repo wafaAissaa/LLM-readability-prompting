@@ -258,7 +258,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='mistral-large-latest')
     parser.add_argument('--mistralai', help='Use MistralAI (default: False)', default=True)
     parser.add_argument('--global_file', type=str, default='Qualtrics_Annotations_B.csv')
-    parser.add_argument('--local_file', type=str, default='annotations_completes.xlsx')
+    parser.add_argument('--local_file', type=str, default='annotations_completes_2.xlsx')
     parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi_under.csv')
     parser.add_argument('--labels', type=str, default='all')
     parser.add_argument('--checkpoint', type=str, default='')
