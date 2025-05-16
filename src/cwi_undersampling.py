@@ -91,7 +91,10 @@ class AnnotatedTextBinary(BaseModel):
 def call_with_retries(client, model, messages, response_format, max_retries=10 ):
     for i in range(max_retries):
         try:
-            return client.chat.complete(model=model, messages=messages, response_format = {"type": "json_object",})#, response_format=response_format)
+            if args.labels == 'all':
+                return client.chat.parse(model=model, messages=messages, response_format = response_format)#, response_format=response_format)
+            else:
+                return client.chat.complete(model=model, messages=messages, response_format=response_format)
         except SDKError as e:
             if '429' in str(e) or 'rate limit' in str(e).lower():
                 wait = 2 ** i
@@ -102,7 +105,7 @@ def call_with_retries(client, model, messages, response_format, max_retries=10 )
     raise RuntimeError("Maximum retry attempts exceeded.")
 
 
-def classify_all_words(text, reader_level, mistralai=True, model="mistral-large-latest"):
+def classify_all_words(text, list_tokens, reader_level, mistralai=True, model="mistral-large-latest"):
 
     # Multilable classification
     # classfication per single word
@@ -124,6 +127,7 @@ def classify_all_words(text, reader_level, mistralai=True, model="mistral-large-
     user_message = (
         f"Niveau CECR du lecteur : {reader_level}\n"
         f"Texte : '{text}'\n"
+        f"liste de mots à évaluer: '{list_tokens}'\n"
         f"Évaluez la complexité de chacun des mots de ce texte pour ce niveau de lecteur."
     )
 
@@ -177,7 +181,7 @@ def classify_binary_list(text, list_tokens, reader_level, mistralai=True, model=
         # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
         mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
         response = call_with_retries(client=mistral_chat, model=model, messages=messages,
-                                     response_format=AnnotatedTextBinary)
+                                     response_format={"type": "json_object",})
         #print(response.choices[0].message.content)
         return response.choices[0].message.content
     else:
@@ -229,7 +233,7 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
         random.shuffle(all_tokens)
 
         if labels == "all":
-            predictions.at[i, 'predictions'] = classify_all_words(row['text'], row['classe'], mistralai=mistralai, model=model)
+            predictions.at[i, 'predictions'] = json.loads(classify_all_words(row['text'], all_tokens, row['classe'], mistralai=mistralai, model=model))
         elif labels == "binary":
             result = json.loads(classify_binary_list(row['text'], all_tokens, row['classe'], mistralai=mistralai, model=model))#['annotations']
             #terms = [r["term"] for r in result]
@@ -248,7 +252,7 @@ if __name__ == "__main__":
     parser.add_argument('--global_file', type=str, default='Qualtrics_Annotations_B.csv')
     parser.add_argument('--local_file', type=str, default='annotations_completes.xlsx')
     parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi_under.csv')
-    parser.add_argument('--labels', type=str, default='binary')
+    parser.add_argument('--labels', type=str, default='all')
     parser.add_argument('--checkpoint', type=str, default='')
     args = parser.parse_args()
 

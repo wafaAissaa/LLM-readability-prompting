@@ -7,56 +7,60 @@ from tqdm import tqdm
 from rapidfuzz import process
 from rapidfuzz import process, fuzz
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, classification_report, confusion_matrix
-from typing import List, Dict
+from typing import List, Dict, Union
+from collections import defaultdict
 
 
-def compute_cwi_metrics_individual(predictions: List[Dict]) -> Dict[str, float]:
+def compute_cwi_metrics(
+        df,
+        pred_col: str = "predictions_gt",
+        level_col: str = None,
+        per_class: bool = False
+) -> Union[Dict[str, float], Dict[str, Dict[str, float]]]:
     """
-    Compute binary classification metrics for Complex Word Identification using sklearn.
-    """
+    Compute binary classification metrics for Complex Word Identification (CWI).
 
-    y_true = [p['gt'] for p in predictions]
-    y_pred = [p['label'] for p in predictions]
-
-    metrics = {
-        'precision': precision_score(y_true, y_pred, zero_division=0),
-        'recall': recall_score(y_true, y_pred, zero_division=0),
-        'f1_score': f1_score(y_true, y_pred, zero_division=0),
-        'accuracy': accuracy_score(y_true, y_pred),
-        'confusion_matrix': confusion_matrix(y_true, y_pred).tolist(),  # [[TN, FP], [FN, TP]]
-        'classification_report': classification_report(y_true, y_pred, zero_division=0, output_dict=True)
-    }
-
-    return metrics
-
-
-
-def compute_aggregated_cwi_metrics(df: pd.DataFrame, col: str = "predictions") -> Dict[str, float]:
-    """
-    Aggregates predictions from all rows of a DataFrame and computes overall CWI metrics.
-
-    Parameters:
-        df (pd.DataFrame): DataFrame with a column containing prediction dicts
-        col (str): Name of the column containing prediction dictionaries
+    Args:
+        df: pandas DataFrame containing the predictions.
+        pred_col: Name of the column with prediction dicts (each row is List[Dict] with 'gt' and 'label').
+        class_col: Name of the column indicating the class (used if per_class=True).
+        per_class: If True, compute metrics per class. If False, compute metrics on the whole dataset.
 
     Returns:
-        Dict[str, float]: precision, recall, f1-score, accuracy
+        Dictionary with overall metrics or dictionary of class → metrics.
     """
-    y_true = []
-    y_pred = []
 
-    for idx, row in df.iterrows():
+    def extract_metrics(predictions: List[Dict]) -> Dict[str, float]:
+        y_true = [p['gt'] for p in predictions]
+        y_pred = [p['label'] for p in predictions]
+        return {
+            'precision': precision_score(y_true, y_pred, zero_division=0),
+            'recall': recall_score(y_true, y_pred, zero_division=0),
+            'f1_score': f1_score(y_true, y_pred, zero_division=0),
+            'accuracy': accuracy_score(y_true, y_pred),
+            'confusion_matrix': confusion_matrix(y_true, y_pred).tolist(),
+            'classification_report': classification_report(y_true, y_pred, output_dict=True, zero_division=0)
+        }
 
-        for item in row[col]:
-            y_true.append(item["gt"])
-            y_pred.append(item["label"])
+    if per_class:
+        if level_col is None:
+            raise ValueError("You must provide 'class_col' when per_class=True.")
 
-    return {
-        "precision": precision_score(y_true, y_pred, zero_division=0),
-        "recall": recall_score(y_true, y_pred, zero_division=0),
-        "f1_score": f1_score(y_true, y_pred, zero_division=0),
-        "accuracy": accuracy_score(y_true, y_pred)
-    }
+        class_preds = defaultdict(list)
+        for _, row in df.iterrows():
+            cls = row[level_col]
+            predictions = row[pred_col]
+            class_preds[cls].extend(predictions)
+
+        results = {}
+        for cls, preds in class_preds.items():
+            results[cls] = extract_metrics(preds)
+        return results
+    else:
+        all_predictions = []
+        for row in df[pred_col]:
+            all_predictions.extend(row)
+        return extract_metrics(all_predictions)
 
 
 predictions_file = "../predictions/predictions_cwi_under_binary_mistral-large-latest.csv"
@@ -114,7 +118,7 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
     #print(predictions)
 
 #print(predictions_df.loc[1213])
-results = compute_aggregated_cwi_metrics(predictions_df.drop(index=1213), "predictions_gt")
+results = compute_cwi_metrics(predictions_df.drop(index=1213), "predictions_gt", level_col="label", per_class=True)
 
 print(results)
 
