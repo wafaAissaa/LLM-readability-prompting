@@ -121,3 +121,92 @@ mistralai.models.sdkerror.SDKError: API error occurred: Status 502
 </body>
 </html>
 
+nohup: les entrées sont ignorées
+
+
+===== New Run =====
+Arguments:
+{
+  "model": "mistral-large-latest",
+  "mistralai": "True",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_binary_mistral-large-latest.csv",
+  "labels": "binary",
+  "checkpoint": "True"
+}
+
+Parsed arguments:
+  model: mistral-large-latest
+  mistralai: True
+  global_file: Qualtrics_Annotations_B.csv
+  local_file: annotations_completes.xlsx
+  predictions_file: ../predictions/predictions_cwi_binary_mistral-large-latest.csv
+  labels: binary
+  checkpoint: True
+../logs/cwi_binary_mistral-large-latest.log
+Predictions will be saved to: ../predictions/predictions_cwi_binary_mistral-large-latest.csv
+USING MISTRAL MODEL mistral-large-latest
+LOADING CHECKPOINT FROM: ../predictions/predictions_cwi_binary_mistral-large-latest.csv ------------------ 
+starting from index %s at location %s (434, 429)
+Traceback (most recent call last):
+  File "/home/waissa/recherche/readability/src/cwi.py", line 545, in <module>
+    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, args.labels, args.checkpoint)
+  File "/home/waissa/recherche/readability/src/cwi.py", line 481, in predict
+    .apply(json.loads)
+     ^^^^^^^^^^^^^^^^^
+  File "/home/waissa/anaconda3/lib/python3.12/site-packages/pandas/core/series.py", line 4924, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/waissa/anaconda3/lib/python3.12/site-packages/pandas/core/apply.py", line 1427, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/waissa/anaconda3/lib/python3.12/site-packages/pandas/core/apply.py", line 1507, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/waissa/anaconda3/lib/python3.12/site-packages/pandas/core/base.py", line 921, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/waissa/anaconda3/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "lib.pyx", line 2972, in pandas._libs.lib.map_infer
+  File "/home/waissa/anaconda3/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/waissa/anaconda3/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/waissa/anaconda3/lib/python3.12/json/decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)
+nohup: les entrées sont ignorées
+
+
+===== New Run =====
+Arguments:
+{
+  "model": "mistral-large-latest",
+  "mistralai": "True",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_binary_mistral-large-latest.csv",
+  "labels": "binary",
+  "checkpoint": "True"
+}
+
+Parsed arguments:
+  model: mistral-large-latest
+  mistralai: True
+  global_file: Qualtrics_Annotations_B.csv
+  local_file: annotations_completes.xlsx
+  predictions_file: ../predictions/predictions_cwi_binary_mistral-large-latest.csv
+  labels: binary
+  checkpoint: True
+../logs/cwi_binary_mistral-large-latest.log
+Predictions will be saved to: ../predictions/predictions_cwi_binary_mistral-large-latest.csv
+USING MISTRAL MODEL mistral-large-latest
+LOADING CHECKPOINT FROM: ../predictions/predictions_cwi_binary_mistral-large-latest.csv ------------------ 
+starting from index %s at location %s (434, 429)
+ 93%|█████████▎| 429/461 [00:00<?, ?it/s] 93%|█████████▎| 430/461 [00:52<26:54, 52.07s/it] 93%|█████████▎| 431/461 [02:54<46:44, 93.49s/it] 94%|█████████▎| 432/461 [03:25<31:18, 64.78s/it] 94%|█████████▍| 433/461 [04:26<29:37, 63.50s/it] 94%|█████████▍| 434/461 [04:42<20:46, 46.16s/it] 94%|█████████▍| 435/461 [05:00<15:51, 36.60s/it] 95%|█████████▍| 436/461 [05:51<17:14, 41.38s/it] 95%|█████████▍| 437/461 [07:19<22:31, 56.29s/it] 95%|█████████▌| 438/461 [08:23<22:25, 58.51s/it] 95%|█████████▌| 439/461 [08:55<18:32, 50.59s/it] 95%|█████████▌| 440/461 [10:06<19:48, 56.58s/it] 96%|█████████▌| 441/461 [10:40<16:37, 49.85s/it] 96%|█████████▌| 442/461 [12:25<21:05, 66.59s/it] 96%|█████████▌| 443/461 [12:52<16:23, 54.62s/it] 96%|█████████▋| 444/461 [13:24<13:30, 47.68s/it] 97%|█████████▋| 445/461 [14:30<14:12, 53.29s/it] 97%|█████████▋| 446/461 [15:26<13:30, 54.00s/it] 97%|█████████▋| 447/461 [15:47<10:19, 44.26s/it] 97%|█████████▋| 448/461 [16:14<08:25, 38.90s/it] 97%|█████████▋| 449/461 [16:22<05:58, 29.85s/it] 98%|█████████▊| 450/461 [16:41<04:49, 26.35s/it] 98%|█████████▊| 451/461 [16:59<04:00, 24.08s/it] 98%|█████████▊| 452/461 [17:15<03:13, 21.48s/it] 98%|█████████▊| 453/461 [17:42<03:06, 23.30s/it] 98%|█████████▊| 454/461 [18:13<02:58, 25.51s/it] 99%|█████████▊| 455/461 [19:25<03:57, 39.59s/it] 99%|█████████▉| 456/461 [19:55<03:02, 36.49s/it] 99%|█████████▉| 457/461 [20:21<02:13, 33.47s/it] 99%|█████████▉| 458/461 [20:52<01:38, 32.74s/it]100%|█████████▉| 459/461 [22:06<01:30, 45.13s/it]100%|█████████▉| 460/461 [23:07<00:49, 49.69s/it]100%|██████████| 461/461 [24:13<00:00, 54.70s/it]100%|██████████| 461/461 [24:13<00:00, 45.42s/it]

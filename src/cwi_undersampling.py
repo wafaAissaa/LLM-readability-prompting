@@ -15,8 +15,6 @@ import logging
 import ast
 
 
-
-
 types = {'Mot difficile ou inconnu',
           'Graphie, problème de déchiffrage',
           'Figure de style, expression idiomatique',
