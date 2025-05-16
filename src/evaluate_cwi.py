@@ -10,12 +10,60 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 from typing import List, Dict, Union
 from collections import defaultdict
 
+import pandas as pd
+
+def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
+    """
+    Convert CWI metrics (either overall or per-class) to a pandas DataFrame,
+    including classification_report details.
+    """
+
+    def extract_summary(m):
+        summary = {
+            'Precision': round(m['precision'], 4),
+            'Recall': round(m['recall'], 4),
+            'F1-Score': round(m['f1_score'], 4),
+            'Accuracy': round(m['accuracy'], 4),
+            'Confusion Matrix': str(m['confusion_matrix']),
+        }
+        return summary
+
+    def extract_classification_report(report: dict, prefix: str = "") -> pd.DataFrame:
+        """Extract precision, recall, f1-score from sklearn classification_report."""
+        rows = []
+        for cls, vals in report.items():
+            if cls in ['accuracy', 'macro avg', 'weighted avg']:
+                continue
+            if isinstance(vals, dict):
+                rows.append({
+                    f"{prefix}Class": str(cls),
+                    "Precision": round(vals.get("precision", 0.0), 4),
+                    "Recall": round(vals.get("recall", 0.0), 4),
+                    "F1-Score": round(vals.get("f1-score", 0.0), 4),
+                    "Support": int(vals.get("support", 0)),
+                })
+        return pd.DataFrame(rows)
+
+    if isinstance(next(iter(metrics.values())), dict) and 'precision' in next(iter(metrics.values())).keys():
+        # Per-class case
+        tables = []
+        for cls, m in metrics.items():
+            report_df = extract_classification_report(m["classification_report"], prefix=f"{cls}_")
+            summary_row = pd.DataFrame([extract_summary(m)], index=[f"{cls}_summary"])
+            tables.append(pd.concat([summary_row, report_df.set_index(f"{cls}_Class")], axis=0))
+        return pd.concat(tables)
+    else:
+        # Overall case
+        summary_df = pd.DataFrame([extract_summary(metrics)], index=["Overall_summary"])
+        report_df = extract_classification_report(metrics["classification_report"])
+        return pd.concat([summary_df, report_df.set_index("Class")], axis=0)
+
 
 def compute_cwi_metrics(
         df,
         pred_col: str = "predictions_gt",
         level_col: str = None,
-        per_class: bool = False
+        per_level: bool = False
 ) -> Union[Dict[str, float], Dict[str, Dict[str, float]]]:
     """
     Compute binary classification metrics for Complex Word Identification (CWI).
@@ -23,11 +71,11 @@ def compute_cwi_metrics(
     Args:
         df: pandas DataFrame containing the predictions.
         pred_col: Name of the column with prediction dicts (each row is List[Dict] with 'gt' and 'label').
-        class_col: Name of the column indicating the class (used if per_class=True).
-        per_class: If True, compute metrics per class. If False, compute metrics on the whole dataset.
+        level_col: Name of the column indicating the level (used if per_level=True).
+        per_class: If True, compute metrics per level. If False, compute metrics on the whole dataset.
 
     Returns:
-        Dictionary with overall metrics or dictionary of class → metrics.
+        Dictionary with overall metrics or dictionary of level → metrics.
     """
 
     def extract_metrics(predictions: List[Dict]) -> Dict[str, float]:
@@ -42,19 +90,19 @@ def compute_cwi_metrics(
             'classification_report': classification_report(y_true, y_pred, output_dict=True, zero_division=0)
         }
 
-    if per_class:
+    if per_level:
         if level_col is None:
-            raise ValueError("You must provide 'class_col' when per_class=True.")
+            raise ValueError("You must provide 'level_col' when per_level=True.")
 
-        class_preds = defaultdict(list)
+        level_preds = defaultdict(list)
         for _, row in df.iterrows():
             cls = row[level_col]
             predictions = row[pred_col]
-            class_preds[cls].extend(predictions)
+            level_preds[cls].extend(predictions)
 
         results = {}
-        for cls, preds in class_preds.items():
-            results[cls] = extract_metrics(preds)
+        for lvl, preds in level_preds.items():
+            results[lvl] = extract_metrics(preds)
         return results
     else:
         all_predictions = []
@@ -68,13 +116,16 @@ predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice"
 
 
 global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv', local_file='annotations_completes.xlsx')
-
 predictions_df["predictions_gt"] = None
+predictions_df['level'] = local_df['classe']
 
 for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
     print(i)
     if i == 1213: continue
     annotations = local_df.at[i, "annotations"]
+
+
+
     annotations = sorted(set(annot['text'] for annot in annotations))
     positives = list(annotations)
     predictions = ast.literal_eval(predictions_df.at[i, "predictions"])
@@ -112,15 +163,16 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
 
     predictions_df.at[i, "predictions_gt"] = predictions
 
+
     #print(predictions_df.at[i, "predictions_gt"])
 
         #print(positives)
     #print(predictions)
 
 #print(predictions_df.loc[1213])
-results = compute_cwi_metrics(predictions_df.drop(index=1213), "predictions_gt", level_col="label", per_class=True)
-
-print(results)
+metrics = compute_cwi_metrics(predictions_df.drop(index=1213), "predictions_gt", level_col="level", per_level=True)
+df_metrics = format_cwi_metrics_as_table(metrics)
+print(df_metrics)
 
 
 
