@@ -198,7 +198,7 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
     if checkpoint:
         print("LOADING CHECKPOINT FROM: %s ------------------ " % predictions_file)
         predictions = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
-        predictions.drop(index=1213, inplace=True)
+        #predictions.drop(index=1213, inplace=True)
         first_none_pos = predictions["predictions"].isna().idxmax()  # gives index label
         first_none_loc = predictions.index.get_loc(first_none_pos)  # get integer position
         print("starting from index %s at location %s" %(first_none_pos, first_none_loc))

@@ -118,9 +118,10 @@ predictions_df['level'] = local_df['classe']
 
 
 for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
+    if i != 1088: continue
     annotations = local_df.at[i, "annotations"]
     #print(annotations)
-
+    print(i)
     positives = list(sorted(set(annot['text'] for annot in annotations)))
     predictions = ast.literal_eval(predictions_df.at[i, "predictions"])["annotations"]
     #print(predictions)
@@ -130,7 +131,7 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
     if all_in_terms:
         for prediction in predictions:
             if prediction['term'] in positives:
-                prediction['gt'] = [a['label'] for a in annotations if a['term'] == prediction['term']]
+                prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
             else:
                 prediction['gt'] = ['0']
 
@@ -148,11 +149,11 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
 
         for prediction in predictions:
             if prediction['term'] in positives:
-                prediction['gt'] = [a['label'] for a in annotations if a['term'] == prediction['term']]
+                prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
 
             elif prediction['term'] in matched_terms:
                 best_match, score, _ = results[token]
-                prediction['gt'] = [a['label'] for a in annotations if results[a['term']][0] == prediction['term']]
+                prediction['gt'] = [a['label'] for a in annotations if results.get(a.get('text'), [None])[0] == prediction['term']]
 
             else:
                 prediction['gt'] = 0
