@@ -10,6 +10,7 @@ from utils_data import load_data, clean_annotations, sample_negative_examples, \
     sample_negative_examples_with_length_match
 from mistralai import Mistral
 from mistralai.models.sdkerror import SDKError
+from openai import OpenAI
 from pydantic import BaseModel
 from typing import List, Literal, Union
 import logging
@@ -149,7 +150,7 @@ def classify_all_words(text, list_tokens, reader_level, mistralai=True, model="m
         return response.message.content
 
 
-def classify_binary_list(text, list_tokens, reader_level, mistralai=True, model="mistral-large-latest"):
+def classify_binary_list(text, list_tokens, reader_level, client, client_name, model_name):
 
     # Multilable classification
     # classfication per single word
@@ -178,19 +179,28 @@ def classify_binary_list(text, list_tokens, reader_level, mistralai=True, model=
         {"role": "user", "content": user_message}
     ]
 
-    if mistralai:
+    if client_name == "mistralai":
         # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
-        response = call_with_retries(client=mistral_chat, model=model, messages=messages,
+        #mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        response = call_with_retries(client=client, model=model_name, messages=messages,
                                      response_format={"type": "json_object",})
         #print(response.choices[0].message.content)
         return response.choices[0].message.content
+    elif client_name == "openai":
+        #openai_chat = OpenAI(api_key="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")
+        response = client.beta.chat.completions.parse(
+            model=model_name,
+            messages=messages,
+            response_format=AnnotatedTextBinary,
+        )
+        return response.choices[0].message.content
+
     else:
-        response: ChatResponse = ollama_chat(model=model, messages=messages)
-        return response.message.content
+        print("-------CLIENT NAME NOT RECOGNIZED------")
+        return None
 
 
-def predict(global_file, local_file, mistralai, model, predictions_file, labels, checkpoint):
+def predict(global_file, local_file, client, client_name, model_name, predictions_file, labels, checkpoint):
 
     global_df, local_df = load_data(file_path="../data", global_file=global_file, local_file=local_file)
     #print(global_df.columns)
@@ -210,7 +220,6 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
             predictions.iloc[first_bad_format_loc:first_none_loc, predictions.columns.get_loc('predictions')]
             .apply(json.loads)
         )"""
-
 
     else:
         print("STARTING FROM THE BEGINNING -----------------------------------")
@@ -232,7 +241,7 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
 
 
         if labels == "all":
-            predictions.at[i, 'predictions'] = json.loads(classify_all_words(row['text'], positives, row['classe'], mistralai=mistralai, model=model))
+            predictions.at[i, 'predictions'] = json.loads(classify_all_words(row['text'], positives, row['classe'], client, client_name, model_name))
 
         elif labels == "binary":
             if args.sampling == "word":
@@ -244,7 +253,7 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
             random.seed(42)
             random.shuffle(all_tokens)
 
-            result = json.loads(classify_binary_list(row['text'], all_tokens, row['classe'], mistralai=mistralai, model=model))#['annotations']
+            result = json.loads(classify_binary_list(row['text'], all_tokens, row['classe'], client, client_name, model_name))#['annotations']
             #terms = [r["term"] for r in result]
             predictions.at[i, 'predictions'] = result
 
@@ -256,27 +265,29 @@ if __name__ == "__main__":
 
     random.seed(42)
     parser = argparse.ArgumentParser(description="Analyse de textes")
-    parser.add_argument('--model', type=str, default='mistral-large-latest')
-    parser.add_argument('--mistralai', help='Use MistralAI (default: False)', default=True)
+    parser.add_argument('--model_name', type=str, default='mistral-large-latest')
     parser.add_argument('--global_file', type=str, default='Qualtrics_Annotations_B.csv')
     parser.add_argument('--local_file', type=str, default='annotations_completes_2.xlsx')
     parser.add_argument('--predictions_file', type=str, default='../predictions/predictions_cwi_under.csv')
-    parser.add_argument('--labels', type=str, default='all')
+    parser.add_argument('--labels', type=str, default='binary')
     parser.add_argument('--checkpoint', type=str, default='')
-    parser.add_argument('--sampling', type=str, default='word')
+    parser.add_argument('--sampling', type=str, default='mwe')
+    parser.add_argument('--client_name', type=str, default='mistralai')
     args = parser.parse_args()
 
     # Modify predictions_file to include the model name
     base, ext = os.path.splitext(args.predictions_file)
-    args.predictions_file = f"{base}_{args.labels}_{args.sampling}_{args.model}{ext}"
+    args.predictions_file = f"{base}_{args.labels}_{args.sampling}_{args.model_name}{ext}"
 
     print("Parsed arguments:")
     for key, value in vars(args).items():
         print(f"  {key}: {value}")
 
     base, ext = os.path.splitext(args.predictions_file)
-    log_file = f"../logs/cwi_under_{args.labels}_{args.sampling}_{args.model}.log"
+    log_file = f"../logs/cwi_under_{args.labels}_{args.sampling}_{args.model_name}.log"
+
     print(log_file)
+
     with open(log_file, "a") as f:
         f.write("\n\n===== New Run =====\n")
         f.write("Arguments:\n")
@@ -286,14 +297,18 @@ if __name__ == "__main__":
     # Example usage
     print(f"Predictions will be saved to: {args.predictions_file}")
 
-    if args.mistralai:
-        print('USING MISTRAL MODEL %s' % args.model)
-        from mistralai import Mistral
+    if args.client_name == "mistralai":
+        print('USING MISTRAL MODEL %s' % args.model_name)
         #api_key = os.environ["MISTRAL_API_KEY"]
         # model = "mistral-large-latest"
-    else:
-        print('USING OLLAMA MODEL %s' % args.model)
-        from ollama import chat as ollama_chat
-        from ollama import ChatResponse
+        client = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
 
-    predict(args.global_file, args.local_file, args.mistralai, args.model, args.predictions_file, args.labels, args.checkpoint)
+    elif args.client_name == "openai":
+        print('USING OPENAI MODEL %s' % args.model_name)
+        #model_name = "gpt-4.1"
+        client = OpenAI(api_key="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")
+
+    else:
+        print("-------CLIENT NAME NOT RECOGNIZED------")
+
+    predict(args.global_file, args.local_file, client, args.client_name, args.model_name, args.predictions_file, args.labels, args.checkpoint)
