@@ -4,13 +4,22 @@ from utils_data import load_data
 from collections import Counter
 import ast
 from tqdm import tqdm
-from rapidfuzz import process
 from rapidfuzz import process, fuzz
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, classification_report, confusion_matrix
 from typing import List, Dict, Union
 from collections import defaultdict
+from sklearn.metrics import (
+    precision_score,
+    recall_score,
+    f1_score,
+    accuracy_score,
+    classification_report,
+    multilabel_confusion_matrix,
+    confusion_matrix
+)
+from sklearn.preprocessing import MultiLabelBinarizer
+from tabulate import tabulate
 
-import pandas as pd
+
 
 def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
     """
@@ -59,7 +68,7 @@ def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
         return pd.concat([summary_df, report_df.set_index("Class")], axis=0)
 
 
-def compute_cwi_metrics(df, pred_col: str = "predictions_gt", level_col: str = None, per_level: bool = False
+def compute_cwi_binary_metrics(df, pred_col: str = "predictions_gt", level_col: str = None, per_level: bool = False
 ) -> Union[Dict[str, float], Dict[str, Dict[str, float]]]:
     """
     Compute binary classification metrics for Complex Word Identification (CWI).
@@ -108,6 +117,138 @@ def compute_cwi_metrics(df, pred_col: str = "predictions_gt", level_col: str = N
         return extract_metrics(all_predictions)
 
 
+
+def print_multilabel_metrics(metrics_dict):
+    # General scores
+    general_table = [
+        ["Precision (Micro)", metrics_dict["precision_micro"]],
+        ["Recall (Micro)", metrics_dict["recall_micro"]],
+        ["F1-Score (Micro)", metrics_dict["f1_micro"]],
+        ["Precision (Macro)", metrics_dict["precision_macro"]],
+        ["Recall (Macro)", metrics_dict["recall_macro"]],
+        ["F1-Score (Macro)", metrics_dict["f1_macro"]],
+        ["Exact Match Accuracy", metrics_dict["exact_match_accuracy"]],
+    ]
+
+    print("=== Overall Metrics ===")
+    print(tabulate(general_table, headers=["Metric", "Score"], floatfmt=".4f"))
+    print("\n")
+
+    # Per-label metrics
+    per_label = metrics_dict["per_label_metrics"]
+    per_label_table = [
+        [label,
+         per_label[label]["precision"],
+         per_label[label]["recall"],
+         per_label[label]["f1"],
+         per_label[label]["support"]]
+        for label in sorted(per_label)
+    ]
+
+    print("=== Per-Label Metrics ===")
+    print(tabulate(per_label_table, headers=["Label", "Precision", "Recall", "F1-Score", "Support"], floatfmt=".4f"))
+
+
+def compute_cwi_all_metrics(df, pred_col: str = "predictions_gt", level_col: str = None, per_level: bool = False
+) -> Union[Dict[str, float], Dict[str, Dict[str, float]]]:
+    """
+    Compute binary classification metrics for Complex Word Identification (CWI).
+
+    Args:
+        df: pandas DataFrame containing the predictions.
+        pred_col: Name of the column with prediction dicts (each row is List[Dict] with 'gt' and 'label').
+        level_col: Name of the column indicating the level (used if per_level=True).
+        per_class: If True, compute metrics per level. If False, compute metrics on the whole dataset.
+
+    Returns:
+        Dictionary with overall metrics or dictionary of level → metrics.
+    """
+
+
+    def extract_multilabel_metrics_with_per_label(
+            predictions: List[Dict[str, Union[str, List[str]]]]
+    ) -> Dict[str, Union[float, Dict]]:
+        # Convert '0' or 0 to empty list for gt and label
+
+        filtered_predictions = [
+            p for p in predictions
+            if p["gt"] not in (["0"], ["Autre"])
+        ]
+
+        y_true = [[label for label in p["gt"] if label != "Autre"] for p in filtered_predictions]
+        for p in filtered_predictions:
+            if len(p["label"]) >1 and "0" in p["label"]:
+                print("HERRREE ", p["label"])
+        y_pred = [[label for label in p["label"] if label != "0"] for p in filtered_predictions]
+
+
+        # Fit binarizer on all seen labels
+        mlb = MultiLabelBinarizer()
+        mlb.fit(y_true )
+        print('CLASSES TRUE', mlb.classes_)
+        mlb.fit(y_true + y_pred)
+        print('CLASSES ALL', mlb.classes_)
+        y_true_bin = mlb.transform(y_true)
+        y_pred_bin = mlb.transform(y_pred)
+
+        # Generate classification report per label
+        report = classification_report(
+            y_true_bin,
+            y_pred_bin,
+            target_names=mlb.classes_,
+            output_dict=True,
+            zero_division=0,
+        )
+
+        return {
+            "precision_micro": precision_score(y_true_bin, y_pred_bin, average="micro", zero_division=0),
+            "recall_micro": recall_score(y_true_bin, y_pred_bin, average="micro", zero_division=0),
+            "f1_micro": f1_score(y_true_bin, y_pred_bin, average="micro", zero_division=0),
+
+            "precision_macro": precision_score(y_true_bin, y_pred_bin, average="macro", zero_division=0),
+            "recall_macro": recall_score(y_true_bin, y_pred_bin, average="macro", zero_division=0),
+            "f1_macro": f1_score(y_true_bin, y_pred_bin, average="macro", zero_division=0),
+
+            "exact_match_accuracy": accuracy_score(y_true_bin, y_pred_bin),  # strict match
+
+            "confusion_matrix": multilabel_confusion_matrix(y_true_bin, y_pred_bin).tolist(),
+
+            "per_label_metrics": {
+                label: {
+                    "precision": report[label]["precision"],
+                    "recall": report[label]["recall"],
+                    "f1": report[label]["f1-score"],
+                    "support": report[label]["support"],
+                }
+                for label in mlb.classes_
+            },
+        }
+
+    if per_level:
+        if level_col is None:
+            raise ValueError("You must provide 'level_col' when per_level=True.")
+
+        level_preds = defaultdict(list)
+        for _, row in df.iterrows():
+            cls = row[level_col]
+            predictions = row[pred_col]
+            level_preds[cls].extend(predictions)
+
+        results = {}
+        for lvl, preds in level_preds.items():
+            results[lvl] = extract_multilabel_metrics_with_per_label(preds)
+            print_multilabel_metrics(results[lvl])
+        return results
+    else:
+        all_predictions = []
+        for row in df[pred_col]:
+            all_predictions.extend(row)
+        results = extract_multilabel_metrics_with_per_label(all_predictions)
+        print_multilabel_metrics(results)
+        return results
+
+
+
 def evaluate_all():
 
     predictions_file = "../predictions/predictions_cwi_under_all_mistral-large-latest.csv"
@@ -120,10 +261,11 @@ def evaluate_all():
     predictions_df['level'] = local_df['classe']
 
     for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
-        if i != 1088: continue
-        annotations = local_df.at[i, "annotations"]
-        #print(annotations)
+        #if i != 1088: continue
         print(i)
+        annotations = local_df.at[i, "annotations"]
+        #print("ANNOTATIONS", annotations)
+
         positives = list(sorted(set(annot['text'] for annot in annotations)))
         predictions = ast.literal_eval(predictions_df.at[i, "predictions"])["annotations"]
         #print(predictions)
@@ -133,9 +275,10 @@ def evaluate_all():
         if all_in_terms:
             for prediction in predictions:
                 if prediction['term'] in positives:
-                    prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
+                    prediction['gt'] = list(set([a['label'] for a in annotations if a['text'] == prediction['term']]))
                 else:
                     prediction['gt'] = ['0']
+                #print("PREDICTION ", prediction)
 
         elif not all_in_terms:
             # print(positives)
@@ -145,20 +288,25 @@ def evaluate_all():
             results = {token: process.extractOne(token, terms, scorer=fuzz.ratio) for token in missing} # token is from annotation
             for token, match in results.items():
                 best_match, score, _ = match
-                print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
+                #print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
 
             matched_terms = {match[0] for match in results.values()}
 
             for prediction in predictions:
                 if prediction['term'] in positives:
-                    prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
+                    prediction['gt'] = list(set([a['label'] for a in annotations if a['text'] == prediction['term']]))
 
                 elif prediction['term'] in matched_terms:
-                    best_match, score, _ = results[token]
-                    prediction['gt'] = [a['label'] for a in annotations if results.get(a.get('text'), [None])[0] == prediction['term']]
+                    prediction['gt'] = list(set([a['label'] for a in annotations if results.get(a.get('text'), [None])[0] == prediction['term']]))
 
                 else:
-                    prediction['gt'] = 0
+                    prediction['gt'] = ['0']
+            #print("PREDICTIONS ", predictions)
+
+        predictions_df.at[i, "predictions_gt"] = predictions
+
+    metrics = compute_cwi_all_metrics(predictions_df, "predictions_gt", level_col="level", per_level=False)
+    print(metrics)
 
     """print(row['text'])
     for prediction in predictions:
@@ -168,7 +316,7 @@ def evaluate_all():
 
     predictions_df.at[i, "predictions_gt"] = predictions"""
 
-
+#evaluate_all()
 
 
 def evaluate_binary():
@@ -242,11 +390,9 @@ def evaluate_binary():
 
         print([p['label'] for p in predictions])'''
 
-    metrics = compute_cwi_metrics(predictions_df, "predictions_gt", level_col="level", per_level=True)
+    metrics = compute_cwi_binary_metrics(predictions_df, "predictions_gt", level_col="level", per_level=True)
     df_metrics = format_cwi_metrics_as_table(metrics)
     print(df_metrics)
-
-
 
 evaluate_binary()
 
