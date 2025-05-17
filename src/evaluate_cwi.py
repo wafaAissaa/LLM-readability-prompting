@@ -76,6 +76,7 @@ def compute_cwi_metrics(df, pred_col: str = "predictions_gt", level_col: str = N
 
     def extract_metrics(predictions: List[Dict]) -> Dict[str, float]:
         y_true = [p['gt'] for p in predictions]
+        print(predictions)
         y_pred = [p['label'] for p in predictions]
         return {
             'precision': precision_score(y_true, y_pred, zero_division=0),
@@ -107,56 +108,57 @@ def compute_cwi_metrics(df, pred_col: str = "predictions_gt", level_col: str = N
         return extract_metrics(all_predictions)
 
 
-predictions_file = "../predictions/predictions_cwi_under_all_mistral-large-latest.csv"
-predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
+def evaluate_all():
 
+    predictions_file = "../predictions/predictions_cwi_under_all_mistral-large-latest.csv"
+    predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
-global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv', local_file='annotations_completes.xlsx')
-global_df.drop(index=1213, inplace=True)
-predictions_df["predictions_gt"] = None
-predictions_df['level'] = local_df['classe']
+    global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv',
+                                    local_file='annotations_completes.xlsx')
+    global_df.drop(index=1213, inplace=True)
+    predictions_df["predictions_gt"] = None
+    predictions_df['level'] = local_df['classe']
 
+    for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
+        if i != 1088: continue
+        annotations = local_df.at[i, "annotations"]
+        #print(annotations)
+        print(i)
+        positives = list(sorted(set(annot['text'] for annot in annotations)))
+        predictions = ast.literal_eval(predictions_df.at[i, "predictions"])["annotations"]
+        #print(predictions)
+        terms = [n['term'] for n in predictions]
+        all_in_terms = all(p in terms for p in positives)
 
-for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
-    if i != 1088: continue
-    annotations = local_df.at[i, "annotations"]
-    #print(annotations)
-    print(i)
-    positives = list(sorted(set(annot['text'] for annot in annotations)))
-    predictions = ast.literal_eval(predictions_df.at[i, "predictions"])["annotations"]
-    #print(predictions)
-    terms = [n['term'] for n in predictions]
-    all_in_terms = all(p in terms for p in positives)
+        if all_in_terms:
+            for prediction in predictions:
+                if prediction['term'] in positives:
+                    prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
+                else:
+                    prediction['gt'] = ['0']
 
-    if all_in_terms:
-        for prediction in predictions:
-            if prediction['term'] in positives:
-                prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
-            else:
-                prediction['gt'] = ['0']
+        elif not all_in_terms:
+            # print(positives)
+            missing = [p for p in positives if p not in terms]
+            # print(missing) #the positive tokens not present in the predicted terms
+            # Find best matches
+            results = {token: process.extractOne(token, terms, scorer=fuzz.ratio) for token in missing} # token is from annotation
+            for token, match in results.items():
+                best_match, score, _ = match
+                print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
 
-    elif not all_in_terms:
-        # print(positives)
-        missing = [p for p in positives if p not in terms]
-        # print(missing) #the positive tokens not present in the predicted terms
-        # Find best matches
-        results = {token: process.extractOne(token, terms, scorer=fuzz.ratio) for token in missing} # token is from annotation
-        for token, match in results.items():
-            best_match, score, _ = match
-            print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
+            matched_terms = {match[0] for match in results.values()}
 
-        matched_terms = {match[0] for match in results.values()}
+            for prediction in predictions:
+                if prediction['term'] in positives:
+                    prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
 
-        for prediction in predictions:
-            if prediction['term'] in positives:
-                prediction['gt'] = [a['label'] for a in annotations if a['text'] == prediction['term']]
+                elif prediction['term'] in matched_terms:
+                    best_match, score, _ = results[token]
+                    prediction['gt'] = [a['label'] for a in annotations if results.get(a.get('text'), [None])[0] == prediction['term']]
 
-            elif prediction['term'] in matched_terms:
-                best_match, score, _ = results[token]
-                prediction['gt'] = [a['label'] for a in annotations if results.get(a.get('text'), [None])[0] == prediction['term']]
-
-            else:
-                prediction['gt'] = 0
+                else:
+                    prediction['gt'] = 0
 
     """print(row['text'])
     for prediction in predictions:
@@ -170,22 +172,30 @@ for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
 
 
 def evaluate_binary():
-    predictions_file = "../predictions/predictions_cwi_under_binary_mistral-large-latest.csv"
+    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_mistral-large-latest.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
 
-    global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv', local_file='annotations_completes.xlsx')
+    global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv', local_file='annotations_completes_2.xlsx')
     predictions_df["predictions_gt"] = None
     predictions_df['level'] = local_df['classe']
 
     for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
         print(i)
         if i == 1213: continue
+        #if i != 2051: continue
+
+
+        #print("PREDICTION:", predictions_df.at[i, "predictions"])
+
+
         annotations = local_df.at[i, "annotations"]
 
 
         annotations = sorted(set(annot['text'] for annot in annotations))
         positives = list(annotations)
+        #for p in positives:
+        #    print(p)
         predictions = ast.literal_eval(predictions_df.at[i, "predictions"])
 
         terms = [n['term'] for n in predictions]
@@ -218,22 +228,27 @@ def evaluate_binary():
                 else:
                     prediction['gt'] = 0
 
-        print(row['text'])
-        for prediction in predictions:
+        #print(row['text'])
+        '''for prediction in predictions:
             print(prediction)
         for annot in annotations:
-            print(annot)
+            print(annot)'''
 
         predictions_df.at[i, "predictions_gt"] = predictions
 
-    metrics = compute_cwi_metrics(predictions_df.drop(index=1213), "predictions_gt", level_col="level", per_level=True)
+        '''print("HHERRREE", predictions)
+        for p in predictions:
+            print(p)
+
+        print([p['label'] for p in predictions])'''
+
+    metrics = compute_cwi_metrics(predictions_df, "predictions_gt", level_col="level", per_level=True)
     df_metrics = format_cwi_metrics_as_table(metrics)
     print(df_metrics)
 
 
 
-
-
+evaluate_binary()
 
 
 #print(predictions_df)
