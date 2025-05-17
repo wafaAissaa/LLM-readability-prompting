@@ -230,19 +230,20 @@ def predict(global_file, local_file, mistralai, model, predictions_file, labels,
         annotations = sorted(set(annot['text'] for annot in annotations))
         positives = list(annotations)
 
-        if args.sampling == "word":
-            negatives = sample_negative_examples(row['text'], positives)
-        elif args.sampling == "mwe":
-            negatives = sample_negative_examples_with_length_match(row['text'], positives)
-
-
-        all_tokens = positives + negatives
-        random.seed(42)
-        random.shuffle(all_tokens)
 
         if labels == "all":
-            predictions.at[i, 'predictions'] = json.loads(classify_all_words(row['text'], all_tokens, row['classe'], mistralai=mistralai, model=model))
+            predictions.at[i, 'predictions'] = json.loads(classify_all_words(row['text'], positives, row['classe'], mistralai=mistralai, model=model))
+
         elif labels == "binary":
+            if args.sampling == "word":
+                negatives = sample_negative_examples(row['text'], positives)
+            elif args.sampling == "mwe":
+                negatives = sample_negative_examples_with_length_match(row['text'], positives)
+
+            all_tokens = positives + negatives
+            random.seed(42)
+            random.shuffle(all_tokens)
+
             result = json.loads(classify_binary_list(row['text'], all_tokens, row['classe'], mistralai=mistralai, model=model))#['annotations']
             #terms = [r["term"] for r in result]
             predictions.at[i, 'predictions'] = result
