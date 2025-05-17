@@ -107,7 +107,7 @@ def call_with_retries(client, model, messages, response_format, max_retries=10 )
     raise RuntimeError("Maximum retry attempts exceeded.")
 
 
-def classify_all_words(text, list_tokens, reader_level, mistralai=True, model="mistral-large-latest"):
+def classify_all_words(text, list_tokens, reader_level, client, client_name, model_name):
 
     # Multilable classification
     # classfication per single word
@@ -139,15 +139,22 @@ def classify_all_words(text, list_tokens, reader_level, mistralai=True, model="m
         {"role": "user", "content": user_message}
     ]
 
-    if mistralai:
+    if client_name == "mistralai":
         # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
-        response = call_with_retries(client=mistral_chat, model=model, messages=messages,
+        response = call_with_retries(client=client, model=model_name, messages=messages,
                                      response_format=AnnotatedText)
         return response.choices[0].message.content
+
+    elif client_name == "openai":
+        response = client.beta.chat.completions.parse(
+            model=model_name,
+            messages=messages,
+            response_format=AnnotatedText,
+        )
+        return response.choices[0].message.content
     else:
-        response: ChatResponse = ollama_chat(model=model, messages=messages)
-        return response.message.content
+        print("-------CLIENT NAME NOT RECOGNIZED------")
+        return None
 
 
 def classify_binary_list(text, list_tokens, reader_level, client, client_name, model_name):
