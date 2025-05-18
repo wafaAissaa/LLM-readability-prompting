@@ -139,150 +139,7 @@ CECR2classe = {"A1": "Très Facile", "A2": "Facile", "B1": "Accessible", "B2": "
 def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> str:
     global instructs_json, shot1, value1, shot2, value2, shot3, value3, shot4, value4, cot1, cot2, cot3, cot4
 
-    if prompt_type == "en":
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'You are an expert in text difficulty classification. '
-                    'Classify the given text into one of the following levels of difficulty: '
-                    'Very Easy, Easy, Accessible, or Complex. '
-                    'Desired format: <Level of difficulty>'
-                ),
-            },
-            {
-                'role': 'user',
-                'content': text,
-            },
-        ])
-    elif prompt_type == "fr":
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'Vous êtes un expert dans la classification de difficulté de texte. '
-                    'Classifier le texte donnée selon les niveaux de difficultés suivants : '
-                    'Très Facile, Facile, Accessible, ou +Complexe. '
-                    'Format souhaité: <Niveau de difficulté>'
-                ),
-            },
-            {
-                'role': 'user',
-                'content': text,
-            },
-        ])
-    elif prompt_type == "en_do_not":
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'Classify the given text into one of the following levels of difficulty: '
-                    'Very Easy, Easy, Accessible, or Complex. '
-                    'Do not predict only <Accessible>. '
-                    'Desired format: <Level of difficulty>'
-                ),
-            },
-            {
-                'role': 'user',
-                'content': text,
-            },
-        ])
-    elif prompt_type == "fr_do_not":
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'Classifiez le texte donnée selon les niveaux de difficultés suivants : '
-                    'Très Facile, Facile, Accessible, ou +Complexe. '
-                    'Ne prédisez pas seulement <Accessible>. '
-                    'Format souhaité: <Niveau de difficulté>'
-                ),
-            },
-            {
-                'role': 'user',
-                'content': text,
-            },
-        ])
-    elif prompt_type == "fr_few_shot":
-        shot1 = "Les fruits et les légumes    La pomme est un fruit. L’ananas est un fruit. Le melon est un fruit. Les poires sont des fruits. (il y en a plusieurs)Les raisins sont des fruits. Les pommes sont des fruits. Les mandarines sont des fruits. Avec les pommes je prépare une tarte aux pommes. Avec les oranges je prépare un jus d’orange. Avec des fruits, je prépare une salade de fruits. Il faut peler les fruits avant de les manger. Je pèle la pomme, je pèle la poire. Il faut enlever les pépins de la pomme.      Le chou est un légume, les courgettes sont des légumes, les oignons sont des légumes, la salade est un légume, les carottes sont des légumes, les champignons sont des légumes. Le concombre est un légume. Il faut peler les légumes avant de les préparer. Il faut couper les légumes avant de les préparer. Il faut laver les légumes avant de les préparer. Avec les légumes, je prépare de la soupe. Avec les légumes, je prépare une salade. Avec les pommes de terre je prépare des frites."
-        value1 = "Très Facile"
-        shot2 = "Les cultures en Afrique du Nord    Les trois pays du Maghreb que sont la Tunisie, le Maroc et l'Algérie ont quasiment les mêmes productions agricoles. Plus on va vers le sud, plus les cultures, les arbres et l'herbe deviennent rares en raison du manque d'eau.  Du nord au sud, la production se répartit comme suit :  - vigne, agrumes (oranges, citrons, mandarines), oliviers, légumes;  - céréales et élevage de moutons;  - dattes, dans les oasis du désert.  Mais l'importance de chaque production varie beaucoup d'un pays à l'autre. Ainsi, en Algérie, la vigne est en tête des productions; au Maroc, ce sont les céréales et l'élevage, tandis qu'en Tunisie, l'olive est prédominante."
-        value2 = "Facile"
-        shot3 = "Horoscope de la semaine du 11 au 17 décembre 2023 pour le Bélier (21 mars - 21 avril)    À la croisée des chemins. Côté pro, si vos objectifs sont clairs, concentrez rendez-vous et prises de décision avant la Nouvelle Lune du 13. Si vous hésitez, patience. De nouvelles idées émergent mais tout est à refaire.  Le signe allié : le Capricorne, il sécurise vos prises de décisions."
-        value3 = "Accessible"
-        shot4 = "La sensibilité écologique a connu au cours des dernières années une spectaculaire extension. Alors qu'il y a vingt ans à peine, elle paraissait être l'apanage de ceux que l'on appelait les «enfants gâtés» de la croissance, tout le monde ou presque se déclare aujourd'hui écologiste. Ou, au moins, prêt à prendre au sérieux la question de la protection de la nature, devenue «patrimoine commun» de l'humanité. Le phénomène est mondial, mais particulièrement net chez les Occidentaux, convaincus d'être menacés par les catastrophes écologiques, persuadés des dangers qui pèsent sur la planète et préoccupés par le monde qu'ils laisseront aux générations futures. Le consensus écologique concerne désormais de larges fractions de la population. Tous ceux qui font de la politique se disent «verts», les scientifiques veulent protéger la Terre, les industriels vendre du propre, les consommateurs commencer à modifier leurs comportements et les gens défendre leur cadre de vie.  Cet unanimisme est ambigu et, à l'évidence, tout le monde ne se fait pas la même idée de la nature. La sensibilité écologique s'incarne dans des clientèles, des programmes et des pratiques extrêmement variés et forme une véritable nébuleuse. Elle peut servir de cadre à ceux qui aspirent à une transformation totale de leur vie, comme à ceux qui n'y cherchent que des activités ponctuelles. Elle peut être l'occasion de nouveaux modes de consommation, d'une volonté de maintenir la diversité des milieux naturels et des cultures, etc. La recherche urgente de nouveaux rapports entre la personne et la planète peut ainsi prendre mille détours et cette variété constitue l'un des fondements de la vitalité actuelle de l'écologie.  D'après l'introduction de L'Équivoque écologique, P. Alphandéry, P. Bitoun et Y. Dupont, La Découverte, Essais, 1991."
-        value4 = "+Complexe"
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'Vous êtes un expert dans la classification de difficulté de texte. '
-                    'Classifier le texte donnée selon les niveaux de difficultés suivants : '
-                    'Très Facile, Facile, Accessible, ou +Complexe. '
-                ),
-            },
-            {'role': 'user','content': shot1,},
-            {'role': 'assistant', 'content': "<" + value1 + ">",},
-            {'role': 'user', 'content': shot2,},
-            {'role': 'assistant', 'content': "<" + value2 + ">",},
-            {'role': 'user', 'content': shot3,},
-            {'role': 'assistant', 'content': "<" + value3 + ">",},
-            {'role': 'user', 'content': shot4,},
-            {'role': 'assistant', 'content': "<" + value4 + ">",},
-            {
-                'role': 'user',
-                'content': text,
-            },
-        ])
-    elif prompt_type == "fr_few_shot_cot": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'Vous êtes un expert dans la classification de difficulté de texte. '
-                    'Classifiez le texte donnée selon les niveaux de difficultés suivants : '
-                    'Très Facile, Facile, Accessible, ou +Complexe. '
-                ),
-            },
-            {'role': 'user','content': shot1,},
-            {'role': 'assistant', 'content': cot1 + "<" + value1 + ">",},
-            {'role': 'user', 'content': shot2,},
-            {'role': 'assistant', 'content': cot2 + "<" + value2 + ">",},
-            {'role': 'user', 'content': shot3,},
-            {'role': 'assistant', 'content': cot3 + "<" + value3 + ">",},
-            {'role': 'user', 'content': shot4,},
-            {'role': 'assistant', 'content': cot4 + "<" + value4 + ">",},
-            {
-                'role': 'user',
-                'content': text,
-            },
-        ])
-    elif prompt_type == "fr_few_shot_cot_with_protocol": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'Vous êtes un expert dans la classification de difficulté de texte. '
-                    'Classifiez le texte donné selon les niveaux de difficulté suivants : '
-                    'Très Facile, Facile, Accessible, ou +Complexe.\n\n'
-                    'Voici la description détaillée des niveaux de difficulté :\n'
-                    f'{instructs_json}'
-                ),
-            },
-            {'role': 'user','content': shot1,},
-            {'role': 'assistant', 'content': cot1 + "\nNiveau: **" + value1 + "**",},
-            {'role': 'user', 'content': shot2,},
-            {'role': 'assistant', 'content': cot2 + "\nNiveau: **" + value2 + "**",},
-            {'role': 'user', 'content': shot3,},
-            {'role': 'assistant', 'content': cot3 + "\nNiveau: **" + value3 + "**",},
-            {'role': 'user', 'content': shot4,},
-            {'role': 'assistant', 'content': cot4 + "\nNiveau: **" + value4 + "**",},
-            {
-                'role': 'user',
-                'content': text,
-            },
-        ])
-    elif prompt_type == "en_CECR": # chain of thought
+    if prompt_type == "en_CECR": # chain of thought
         response: ChatResponse = chat(model=model_name, messages=[
             {
                 'role': 'system',
@@ -311,29 +168,7 @@ def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> st
             {'role': 'user','content': "Classifiez ce texte français :\n" + text,},
             {'role': 'assistant', 'content': 'Niveau CECR : **'}
         ])
-    elif prompt_type == "en_CECR_few_shot_cot": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'You are a linguistic expert specialized in evaluating French language levels according to the Common European Framework of Reference for Languages (CEFR). Your task is to classify the following French text into one of the CEFR levels: A1, A2, B1, B2, C1, or C2.\n'
-                    '\nExample:'
-                    'Text to classify: "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
-                    'Le texte fourni est composé de phrases simples et courtes, utilisant des structures grammaticales de base et un vocabulaire élémentaire. Selon le Cadre européen commun de référence pour les langues (CECRL), le niveau A1 correspond à la capacité de comprendre et d\'utiliser des expressions familières et quotidiennes ainsi que des énoncés très simples visant à satisfaire des besoins concrets.'
-                    'CECR Level: **A1**'
-                ),
-            },
-            {'role': 'user','content': "Classify this French text:\n" + shot1,},
-            {'role': 'assistant', 'content': cot1_CECR + "\n" + "CECR Level: **" + classe2CECR[value1] + "**"},
-            {'role': 'user', 'content': "Classify this French text:\n" + shot2,},
-            {'role': 'assistant', 'content': cot2_CECR + "\n" + "CECR Level: **" + classe2CECR[value2] + "**"},
-            {'role': 'user', 'content': "Classify this French text:\n" + shot3,},
-            {'role': 'assistant', 'content': cot3_CECR + "\n" + "CECR Level: **" + classe2CECR[value3] + "**"},
-            {'role': 'user', 'content': "Classify this French text:\n" + shot4,},
-            {'role': 'assistant', 'content': cot4_CECR + "\n" + "CECR Level: **" + classe2CECR[value4] + "**"},
-            {'role': 'user','content': "Classify this French text:\n" + text,},
-            {'role': 'assistant', 'content': 'CECR Level: **'}
-        ])
+
     elif prompt_type == "en_CECR_few_shot_cot_v2": # chain of thought
         response: ChatResponse = chat(model=model_name, messages=[
             {
@@ -357,6 +192,7 @@ def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> st
             {'role': 'user','content': "Classify this French text:\n" + text,},
             {'role': 'assistant', 'content': 'CECR Level: **'}
         ])
+
     elif prompt_type == "fr_CECR_few_shot_cot_v2": # chain of thought
         response: ChatResponse = chat(model=model_name, messages=[
             {
@@ -380,34 +216,7 @@ def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> st
             {'role': 'user','content': "Classifiez ce texte français :\n" + text,},
             {'role': 'assistant', 'content': 'Niveau CECR : **'}
         ])
-    elif prompt_type == "fr_CECR_few_shot_cot_v3": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    "Vous êtes un expert linguistique spécialisé dans l'évaluation des niveaux de français selon le Cadre européen commun de référence pour les langues (CECR). Votre tâche consiste à classer le texte français suivant dans l'un des niveaux du CECR : A1, A2, B1, B2, C1 ou C2.\n"
-                    '\nExemple :'
-                    'Texte à classifier : "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
-                    'Le texte fourni est composé de phrases simples et courtes, utilisant des structures grammaticales de base et un vocabulaire élémentaire. Selon le Cadre européen commun de référence pour les langues (CECRL), le niveau A1 correspond à la capacité de comprendre et d\'utiliser des expressions familières et quotidiennes ainsi que des énoncés très simples visant à satisfaire des besoins concrets.'
-                    'Niveau CECR: **A1**'
-                ),
-            },
-            {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot3_v3,},
-            {'role': 'assistant', 'content': cot3_v3 + "\n" + "Niveau CECR : **" + classe2CECR[value3_v3] + "**"},
-            {'role': 'user','content': "Classifiez ce texte français :\n" + shot1_v3,},
-            {'role': 'assistant', 'content': cot1_v3 + "\n" + "Niveau CECR : **" + classe2CECR[value1_v3] + "**"},
-            {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot6_v3,},
-            {'role': 'assistant', 'content': cot6_v3 + "\n" + "Niveau CECR : **" + classe2CECR[value6_v3] + "**"},
-            {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot2_v3,},
-            {'role': 'assistant', 'content': cot2_v3 + "\n" + "Niveau CECR : **" + classe2CECR[value2_v3] + "**"},
-            {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot4_v3,},
-            {'role': 'assistant', 'content': cot4_v3 + "\n" + "Niveau CECR : **" + classe2CECR[value4_v3] + "**"},
-            {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot5_v3,},
-            {'role': 'assistant', 'content': cot5_v3 + "\n" + "Niveau CECR : **" + classe2CECR[value5_v3] + "**"},
-            
-            {'role': 'user','content': "Classifiez ce texte français :\n" + text,},
-            {'role': 'assistant', 'content': 'Niveau CECR : **'}
-        ])
+
     else:
         raise ValueError("Invalid prompt type. Must be 'en', 'fr', 'en_do_not', 'fr_do_not', 'fr_few_shot', 'fr_few_shot_cot', 'fr_few_shot_cot_with_protocol' or 'en_CECR'.")
     return response['message']['content']
@@ -421,8 +230,8 @@ def load_dataset(path="../../data/Qualtrics_Annotations_formatB.csv"):
 
 def infer_classification(dataset, model_name, prompt_type, csv_path):
     # if file results/{prompt_type}.txt exists, load it
-    if os.path.exists(f"results/llm_output/{model_name}_{prompt_type}.json"):
-        with open(f"results/llm_output/{model_name}_{prompt_type}.json", encoding="utf-8") as f:
+    if os.path.exists(f"../results_global/llm_output/{model_name}_{prompt_type}.json"):
+        with open(f"../results_global/llm_output/{model_name}_{prompt_type}.json", encoding="utf-8") as f:
             text2output = json.load(f)  # Load the JSON file as a list of dictionaries [{"text_a": ..., "text_b": ...}, ...]
     else:
         text2output = dict()
@@ -435,7 +244,7 @@ def infer_classification(dataset, model_name, prompt_type, csv_path):
         else:
             dataset.at[index, "difficulty"] = classify_text_difficulty(row["text"], model_name, prompt_type)
             text2output[row["text"]] = dataset.at[index, "difficulty"]
-            with open(f"results/llm_output/{model_name}_{prompt_type}.json", "w", encoding="utf-8") as f:
+            with open(f"../results_global/llm_output/{model_name}_{prompt_type}.json", "w", encoding="utf-8") as f:
                 json.dump(text2output, f, ensure_ascii=False, indent=4)  # Pretty-print JSON
         i += 1
         bar.update(i)
@@ -595,8 +404,6 @@ def evaluate_classification(dataset, confusion_matrix_path, results_path):
     y_pred = dataset["difficulty"]
     y_true = dataset["gold_score_20_label"]
 
-
-
     folds = split_into_folds(y_true, y_pred, n_splits=5)
 
     accuracies = []
@@ -669,35 +476,20 @@ def get_difficulty_level(dataset_path, model_name, prompt_type, csv_path):
         dataset = infer_classification(dataset, model_name, prompt_type, csv_path)
     return dataset
 
-'''
-if __name__ == "__main__":
-    model_name = "deepseek-r1:32b" # "deepseek-r1:70b" # "llama3.2:1b" # "deepseek-r1:70b" # "deepseek-r1:7b" # "llama3.2:1b"
-    prompt_type = "fr_CECR_few_shot_cot_v2" # "en_CECR" # "en_CECR_few_shot_cot_v2" # "fr_CECR" # "fr_CECR_few_shot_cot_v3" # "en_CECR_few_shot_cot" # "fr_few_shot_cot_with_protocol" # "fr_few_shot_cot" # "fr_few_shot" # "fr_do_not" # "en_do_not" # "en" # "fr"
-    dataset_path = "../../data/Qualtrics_Annotations_formatB.csv"
-    csv_path = "./data/Qualtrics_Annotations_formatB_out_" + model_name + "_" + prompt_type + ".csv"
-    confusion_matrix_path = "./results/confusion_matrix_" + model_name + "_" + prompt_type + ".png"
-    results_path = "./results/results_" + model_name + "_" + prompt_type + ".txt"
-
-    dataset = get_difficulty_level(dataset_path, model_name, prompt_type, csv_path) # infer or load the difficulty level
-
-    print(dataset)
-    # for each value of the column "difficulty", print value if not in ["Very Easy", "Easy", "Accessible", "Complex"]
-    # print(dataset[~dataset["difficulty"].isin(["Very Easy", "Easy", "Accessible", "Complex"])]["difficulty"].unique())
-
-    evaluate_classification(dataset, confusion_matrix_path, results_path) # evaluate the classification
-'''
 
 if __name__ == "__main__":
-    model_name = "deepseek-r1:14b" # "deepseek-r1:7b" # "gemma3:27b" # "qwen2.5:72b" # "deepseek-r1:32b" # "deepseek-r1:70b" # "llama3.2:1b" # "deepseek-r1:70b" # "deepseek-r1:7b" # "llama3.2:1b"
-    prompt_types = ["en_CECR", "fr_CECR", "fr_CECR_few_shot_cot_v2", "en_CECR_few_shot_cot_v2"] # "en_CECR" # "en_CECR_few_shot_cot_v2" # "fr_CECR" # "fr_CECR_few_shot_cot_v3" # "en_CECR_few_shot_cot" # "fr_few_shot_cot_with_protocol" # "fr_few_shot_cot" # "fr_few_shot" # "fr_do_not" # "en_do_not" # "en" # "fr"
+    #model_name = "deepseek-r1:14b" # "deepseek-r1:7b" # "gemma3:27b" # "qwen2.5:72b" # "deepseek-r1:32b" # "deepseek-r1:70b" # "llama3.2:1b" # "deepseek-r1:70b" # "deepseek-r1:7b" # "llama3.2:1b"
+    #prompt_types = ["en_CECR", "fr_CECR", "fr_CECR_few_shot_cot_v2", "en_CECR_few_shot_cot_v2"] # "en_CECR" # "en_CECR_few_shot_cot_v2" # "fr_CECR" # "fr_CECR_few_shot_cot_v3" # "en_CECR_few_shot_cot" # "fr_few_shot_cot_with_protocol" # "fr_few_shot_cot" # "fr_few_shot" # "fr_do_not" # "en_do_not" # "en" # "fr"
     # prompt_types = ["en_CECR_few_shot_cot_v2"]
-    dataset_path = "../../data/Qualtrics_Annotations_formatB.csv"
+    model_name = "mistral-large-latest"
+    prompt_types = ["fr_CECR", "fr_CECR_few_shot_cot_v2"]
+    dataset_path = "../data/Qualtrics_Annotations_B.csv"
 
 
     for prompt_type in prompt_types:
-        csv_path = "./data/Qualtrics_Annotations_formatB_out_" + model_name + "_" + prompt_type + ".csv"
-        confusion_matrix_path = "./results/cm/confusion_matrix_" + model_name + "_" + prompt_type + ".png"
-        results_path = "./results/results_" + model_name + "_" + prompt_type + ".txt"
+        csv_path = "../results_global/Qualtrics_Annotations_formatB_out_" + model_name + "_" + prompt_type + ".csv"
+        confusion_matrix_path = "../results_global/results/cm/confusion_matrix_" + model_name + "_" + prompt_type + ".png"
+        results_path = "../results_global/results_" + model_name + "_" + prompt_type + ".txt"
 
         dataset = get_difficulty_level(dataset_path, model_name, prompt_type, csv_path) # infer or load the difficulty level
 
