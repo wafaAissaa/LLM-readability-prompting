@@ -3,6 +3,7 @@ import pandas as pd
 from utils_data import load_data
 from collections import Counter
 import ast
+import re
 from tqdm import tqdm
 from rapidfuzz import process, fuzz
 from typing import List, Dict, Union
@@ -329,7 +330,7 @@ def evaluate_all():
 
 
 def evaluate_binary():
-    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_gpt-4.1.csv"
+    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
 
@@ -337,8 +338,12 @@ def evaluate_binary():
     predictions_df["predictions_gt"] = None
     predictions_df['level'] = local_df['classe']
 
+    stop = 0
     for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
         print(i)
+        #stop += 1
+        #if stop == 29:
+        #    break
         if i == 1213: continue
         #if i != 2051: continue
 
@@ -350,12 +355,22 @@ def evaluate_binary():
         positives = list(annotations)
         #for p in positives:
         #    print(p)
-        predictions = ast.literal_eval(predictions_df.at[i, "predictions"])["annotations"]
+        result = predictions_df.at[i, "predictions"]
+        if 'deepseek' in predictions_file:
+            result = re.search(r"```json\n(.*?)\n```", result, re.DOTALL).group(1).strip()
+            #print(result)
+            predictions = json.loads(result)
+
+        if 'gpt' in predictions_file:
+            predictions = ast.literal_eval(result)["annotations"]
+
+        else:
+            predictions = ast.literal_eval(result)
 
         terms = [n['term'] for n in predictions]
         all_in_terms = all(p in terms for p in positives)
 
-        # print(all_in_terms)
+        print('ALL_in_terms', all_in_terms)
 
         if all_in_terms:
             for prediction in predictions:
@@ -372,6 +387,8 @@ def evaluate_binary():
             results = {token: process.extractOne(token, terms, scorer=fuzz.ratio) for token in missing}
             for token, match in results.items():
                 best_match, score, _ = match
+                #print(positives)
+                #print(predictions)
                 print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
 
             matched_terms = {match[0] for match in results.values()}
@@ -395,6 +412,7 @@ def evaluate_binary():
             print(p)
 
         print([p['label'] for p in predictions])'''
+
 
     metrics = compute_cwi_binary_metrics(predictions_df, "predictions_gt", level_col="level", per_level=True)
     df_metrics = format_cwi_metrics_as_table(metrics)

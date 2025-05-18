@@ -1,5 +1,5 @@
-from ollama import chat
-from ollama import ChatResponse
+#from ollama import chat
+#from ollama import ChatResponse
 import pandas as pd
 import progressbar
 import os
@@ -10,7 +10,23 @@ import seaborn as sns
 import re
 import json
 import numpy as np
+import time
+from mistralai.models.sdkerror import SDKError
+from mistralai import Mistral
 
+
+def call_with_retries(client, model, messages, max_retries=10):
+    for i in range(max_retries):
+        try:
+            return client.chat.complete(model=model, messages=messages)
+        except SDKError as e:
+            if '429' in str(e) or 'rate limit' in str(e).lower():
+                wait = 2 ** i
+                print(f"Rate limited. Retrying in {wait} seconds...")
+                time.sleep(wait)
+            else:
+                raise
+    raise RuntimeError("Maximum retry attempts exceeded.")
 
 # protocol of annotations
 instructs = {
@@ -136,7 +152,7 @@ classe2CECR = {"Très Facile": "A1", "Facile": "A2", "Accessible": "B1", "+Compl
 CECR2classe = {"A1": "Très Facile", "A2": "Facile", "B1": "Accessible", "B2": "+Complexe", "C1": "+Complexe", "C2": "+Complexe"}
 
 # Function to classify text difficulty
-def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> str:
+def classify_text_difficulty(client, text: str, model_name: str, prompt_type: str) -> str:
     global instructs_json, shot1, value1, shot2, value2, shot3, value3, shot4, value4, cot1, cot2, cot3, cot4
 
     if prompt_type == "en_CECR": # chain of thought
@@ -153,8 +169,9 @@ def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> st
             {'role': 'user','content': "Classify this French text:\n" + text,},
             {'role': 'assistant', 'content': 'CECR Level: **'}
         ])
+
     elif prompt_type == "fr_CECR": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
+        messages = [
             {
                 'role': 'system',
                 'content': (
@@ -165,9 +182,12 @@ def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> st
                     'Niveau CECR: **A1**'
                 ),
             },
-            {'role': 'user','content': "Classifiez ce texte français :\n" + text,},
-            {'role': 'assistant', 'content': 'Niveau CECR : **'}
-        ])
+            {'role': 'user', 'content': "Classifiez ce texte français :\n" + text, },
+            {'role': 'assistant', 'content': 'Niveau CECR : **',  "prefix": True}
+        ]
+
+        response = call_with_retries(client=client, model=model_name, messages=messages)
+
 
     elif prompt_type == "en_CECR_few_shot_cot_v2": # chain of thought
         response: ChatResponse = chat(model=model_name, messages=[
@@ -219,16 +239,16 @@ def classify_text_difficulty(text: str, model_name: str, prompt_type: str) -> st
 
     else:
         raise ValueError("Invalid prompt type. Must be 'en', 'fr', 'en_do_not', 'fr_do_not', 'fr_few_shot', 'fr_few_shot_cot', 'fr_few_shot_cot_with_protocol' or 'en_CECR'.")
-    return response['message']['content']
+    return response.choices[0].message.content
 
 
 
 
-def load_dataset(path="../../data/Qualtrics_Annotations_formatB.csv"):
-    df = pd.read_csv(path)
+def load_dataset(path="../data/Qualtrics_Annotations_B.csv"):
+    df = pd.read_csv(path, delimiter="\t", index_col="text_indice")
     return df
 
-def infer_classification(dataset, model_name, prompt_type, csv_path):
+def infer_classification(client, dataset, model_name, prompt_type, csv_path):
     # if file results/{prompt_type}.txt exists, load it
     if os.path.exists(f"../results_global/llm_output/{model_name}_{prompt_type}.json"):
         with open(f"../results_global/llm_output/{model_name}_{prompt_type}.json", encoding="utf-8") as f:
@@ -237,12 +257,13 @@ def infer_classification(dataset, model_name, prompt_type, csv_path):
         text2output = dict()
 
     bar = progressbar.ProgressBar(maxval=len(dataset))
+    bar.start()
     i = 0
     for index, row in dataset.iterrows():
         if row["text"] in text2output:
             dataset.at[index, "difficulty"] = text2output[row["text"]]
         else:
-            dataset.at[index, "difficulty"] = classify_text_difficulty(row["text"], model_name, prompt_type)
+            dataset.at[index, "difficulty"] = classify_text_difficulty(client, row["text"], model_name, prompt_type)
             text2output[row["text"]] = dataset.at[index, "difficulty"]
             with open(f"../results_global/llm_output/{model_name}_{prompt_type}.json", "w", encoding="utf-8") as f:
                 json.dump(text2output, f, ensure_ascii=False, indent=4)  # Pretty-print JSON
@@ -468,12 +489,12 @@ def evaluate_classification(dataset, confusion_matrix_path, results_path):
 
 
 
-def get_difficulty_level(dataset_path, model_name, prompt_type, csv_path):
+def get_difficulty_level(client, dataset_path, model_name, prompt_type, csv_path):
     if os.path.exists(csv_path):
         dataset = pd.read_csv(csv_path)
     else:
         dataset = load_dataset(dataset_path)
-        dataset = infer_classification(dataset, model_name, prompt_type, csv_path)
+        dataset = infer_classification(client, dataset, model_name, prompt_type, csv_path)
     return dataset
 
 
@@ -482,7 +503,10 @@ if __name__ == "__main__":
     #prompt_types = ["en_CECR", "fr_CECR", "fr_CECR_few_shot_cot_v2", "en_CECR_few_shot_cot_v2"] # "en_CECR" # "en_CECR_few_shot_cot_v2" # "fr_CECR" # "fr_CECR_few_shot_cot_v3" # "en_CECR_few_shot_cot" # "fr_few_shot_cot_with_protocol" # "fr_few_shot_cot" # "fr_few_shot" # "fr_do_not" # "en_do_not" # "en" # "fr"
     # prompt_types = ["en_CECR_few_shot_cot_v2"]
     model_name = "mistral-large-latest"
-    prompt_types = ["fr_CECR", "fr_CECR_few_shot_cot_v2"]
+    if "mistral" in model_name:
+        client = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+
+    prompt_types = ["fr_CECR"]#, "fr_CECR_few_shot_cot_v2"]
     dataset_path = "../data/Qualtrics_Annotations_B.csv"
 
 
@@ -491,7 +515,7 @@ if __name__ == "__main__":
         confusion_matrix_path = "../results_global/results/cm/confusion_matrix_" + model_name + "_" + prompt_type + ".png"
         results_path = "../results_global/results_" + model_name + "_" + prompt_type + ".txt"
 
-        dataset = get_difficulty_level(dataset_path, model_name, prompt_type, csv_path) # infer or load the difficulty level
+        dataset = get_difficulty_level(client, dataset_path, model_name, prompt_type, csv_path) # infer or load the difficulty level
 
         print(dataset)
         # for each value of the column "difficulty", print value if not in ["Very Easy", "Easy", "Accessible", "Complex"]
