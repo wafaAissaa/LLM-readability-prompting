@@ -29,10 +29,10 @@ def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
 
     def extract_summary(m):
         summary = {
-            'Precision': round(m['precision'], 4),
-            'Recall': round(m['recall'], 4),
-            'F1-Score': round(m['f1_score'], 4),
-            'Accuracy': round(m['accuracy'], 4),
+            'Precision': round(m['precision'], 4) * 100,
+            'Recall': round(m['recall'], 4) * 100,
+            'F1-Score': round(m['f1_score'], 4) * 100,
+            'Accuracy': round(m['accuracy'], 4)* 100,
             'Confusion Matrix': str(m['confusion_matrix']),
         }
         return summary
@@ -46,10 +46,10 @@ def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
             if isinstance(vals, dict):
                 rows.append({
                     f"{prefix}Class": str(cls),
-                    "Precision": round(vals.get("precision", 0.0), 4),
-                    "Recall": round(vals.get("recall", 0.0), 4),
-                    "F1-Score": round(vals.get("f1-score", 0.0), 4),
-                    "Support": int(vals.get("support", 0)),
+                    "Precision": round(vals.get("precision", 0.0), 4) * 100,
+                    "Recall": round(vals.get("recall", 0.0), 4) * 100,
+                    "F1-Score": round(vals.get("f1-score", 0.0), 4) * 100,
+                    "Support": int(vals.get("support", 0)) * 100,
                 })
         return pd.DataFrame(rows)
 
@@ -135,22 +135,26 @@ def print_multilabel_metrics(metrics_dict):
     ]
 
     print("=== Overall Metrics ===")
-    print(tabulate(general_table, headers=["Metric", "Score"], floatfmt=".4f"))
+    general_table_percent = [[metric, score * 100] for metric, score in general_table]
+
+    print(tabulate(general_table_percent, headers=["Metric", "Score (%)"], floatfmt=".2f"))
+    #print(tabulate(general_table, headers=["Metric", "Score"], floatfmt=".4f"))
     print("\n")
 
     # Per-label metrics
     per_label = metrics_dict["per_label_metrics"]
     per_label_table = [
         [label,
-         per_label[label]["precision"],
-         per_label[label]["recall"],
-         per_label[label]["f1"],
+         per_label[label]["precision"] *100,
+         per_label[label]["recall"]*100,
+         per_label[label]["f1"]*100,
          per_label[label]["support"]]
         for label in sorted(per_label)
     ]
 
     print("=== Per-Label Metrics ===")
-    print(tabulate(per_label_table, headers=["Label", "Precision", "Recall", "F1-Score", "Support"], floatfmt=".4f"))
+
+    print(tabulate(per_label_table, headers=["Label", "Precision", "Recall", "F1-Score", "Support"], floatfmt=".2f"))
 
 
 def compute_cwi_all_metrics(df, pred_col: str = "predictions_gt", level_col: str = None, per_level: bool = False
@@ -255,11 +259,12 @@ def compute_cwi_all_metrics(df, pred_col: str = "predictions_gt", level_col: str
 
 def evaluate_all():
 
-    predictions_file = "../predictions/predictions_cwi_under_all_mistral-large-latest.csv"
+    #predictions_file = "../predictions/predictions_cwi_under_all_mwe_mistral-large-latest.csv"
+    predictions_file = "../predictions/predictions_cwi_under_all_mwe_gpt-4.1.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
     global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv',
-                                    local_file='annotations_completes.xlsx')
+                                    local_file='annotations_completes_2.xlsx')
     global_df.drop(index=1213, inplace=True)
     predictions_df["predictions_gt"] = None
     predictions_df['level'] = local_df['classe']
