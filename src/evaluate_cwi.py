@@ -85,8 +85,12 @@ def compute_cwi_binary_metrics(df, pred_col: str = "predictions_gt", level_col: 
 
     def extract_metrics(predictions: List[Dict]) -> Dict[str, float]:
         y_true = [p['gt'] for p in predictions]
-        print(predictions)
-        y_pred = [p['label'] for p in predictions]
+        #print(y_true)
+        if type(predictions[0]['label']) == list:
+            y_pred = [int(p['label'][0]) for p in predictions]
+        else:
+            y_pred = [p['label'] for p in predictions]
+        #print(y_pred)
         return {
             'precision': precision_score(y_true, y_pred, zero_division=0),
             'recall': recall_score(y_true, y_pred, zero_division=0),
@@ -320,7 +324,7 @@ def evaluate_all():
 
 
 def evaluate_binary():
-    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_mistral-large-latest.csv"
+    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_gpt-4.1.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
 
@@ -333,18 +337,15 @@ def evaluate_binary():
         if i == 1213: continue
         #if i != 2051: continue
 
-
         #print("PREDICTION:", predictions_df.at[i, "predictions"])
 
-
         annotations = local_df.at[i, "annotations"]
-
 
         annotations = sorted(set(annot['text'] for annot in annotations))
         positives = list(annotations)
         #for p in positives:
         #    print(p)
-        predictions = ast.literal_eval(predictions_df.at[i, "predictions"])
+        predictions = ast.literal_eval(predictions_df.at[i, "predictions"])["annotations"]
 
         terms = [n['term'] for n in predictions]
         all_in_terms = all(p in terms for p in positives)
@@ -366,7 +367,7 @@ def evaluate_binary():
             results = {token: process.extractOne(token, terms, scorer=fuzz.ratio) for token in missing}
             for token, match in results.items():
                 best_match, score, _ = match
-                #print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
+                print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
 
             matched_terms = {match[0] for match in results.values()}
 
