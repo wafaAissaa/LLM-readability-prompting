@@ -1,0 +1,15 @@
+global_accuracy	0.4838475923328658 ± 0.05612422574418397
+global_adjacent_accuracy	0.9675081813931744 ± 0.013564989757894993
+global_macro_f1	0.4469181126712486 ± 0.06844109023752218
+difficulty_0_accuracy	0.3157894736842105
+difficulty_0_adjacent_accuracy	0.8947368421052632
+difficulty_0_f1	0.3870967741935484
+difficulty_1_accuracy	0.49056603773584906
+difficulty_1_adjacent_accuracy	0.9386792452830188
+difficulty_1_f1	0.5875706214689266
+difficulty_2_accuracy	0.4292929292929293
+difficulty_2_adjacent_accuracy	1.0
+difficulty_2_f1	0.4497354497354497
+difficulty_3_accuracy	0.875
+difficulty_3_adjacent_accuracy	1.0
+difficulty_3_f1	0.3522012578616352

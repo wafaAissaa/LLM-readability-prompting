@@ -109,22 +109,8 @@ CECR2classe = {"A1": "Très Facile", "A2": "Facile", "B1": "Accessible", "B2": "
 def classify_text_difficulty(client, text: str, model_name: str, prompt_type: str) -> str:
     global instructs_json, shot1, value1, shot2, value2, shot3, value3, shot4, value4, cot1, cot2, cot3, cot4
 
-    if prompt_type == "en_CECR": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'You are a linguistic expert specialized in evaluating French language levels according to the Common European Framework of Reference for Languages (CEFR). Your task is to classify the following French text into one of the CEFR levels: A1, A2, B1, B2, C1, or C2. Respond ONLY with the most appropriate level label, without any explanation or additional text.\n'
-                    '\nExample:'
-                    'Text to classify: "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
-                    'CECR Level: **A1**'
-                ),
-            },
-            {'role': 'user','content': "Classify this French text:\n" + text,},
-            {'role': 'assistant', 'content': 'CECR Level: **'}
-        ])
 
-    elif prompt_type == "fr_CECR": # chain of thought
+    if prompt_type == "fr_CECR": # chain of thought
         messages = [
             {
                 'role': 'system',
@@ -142,36 +128,11 @@ def classify_text_difficulty(client, text: str, model_name: str, prompt_type: st
         if 'mistral' in model_name:
             response = call_with_retries(client=client, model=model_name, messages=messages)
         else:
-            response = client.chat.completions.create(client=client, model=model_name, messages=messages)
+            response = client.chat.completions.create(model=model_name, messages=messages)
 
-
-
-    elif prompt_type == "en_CECR_few_shot_cot_v2": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'You are a linguistic expert specialized in evaluating French language levels according to the Common European Framework of Reference for Languages (CEFR). Your task is to classify the following French text into one of the CEFR levels: A1, A2, B1, B2, C1, or C2.\n'
-                    '\nExample:'
-                    'Text to classify: "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
-                    'Le texte fourni est composé de phrases simples et courtes, utilisant des structures grammaticales de base et un vocabulaire élémentaire. Selon le Cadre européen commun de référence pour les langues (CECRL), le niveau A1 correspond à la capacité de comprendre et d\'utiliser des expressions familières et quotidiennes ainsi que des énoncés très simples visant à satisfaire des besoins concrets.'
-                    'CECR Level: **A1**'
-                ),
-            },
-            {'role': 'user', 'content': "Classify this French text:\n" + shot3_v2,},
-            {'role': 'assistant', 'content': cot3_v2 + "\n" + "CECR Level: **" + classe2CECR[value3_v2] + "**"},
-            {'role': 'user','content': "Classify this French text:\n" + shot1_v2,},
-            {'role': 'assistant', 'content': cot1_v2 + "\n" + "CECR Level: **" + classe2CECR[value1_v2] + "**"},
-            {'role': 'user', 'content': "Classify this French text:\n" + shot2_v2,},
-            {'role': 'assistant', 'content': cot2_v2 + "\n" + "CECR Level: **" + classe2CECR[value2_v2] + "**"},
-            {'role': 'user', 'content': "Classify this French text:\n" + shot4_v2,},
-            {'role': 'assistant', 'content': cot4_v2 + "\n" + "CECR Level: **" + classe2CECR[value4_v2] + "**"},
-            {'role': 'user','content': "Classify this French text:\n" + text,},
-            {'role': 'assistant', 'content': 'CECR Level: **'}
-        ])
 
     elif prompt_type == "fr_CECR_few_shot_cot_v2": # chain of thought
-        response: ChatResponse = chat(model=model_name, messages=[
+        messages=[
             {
                 'role': 'system',
                 'content': (
@@ -191,8 +152,62 @@ def classify_text_difficulty(client, text: str, model_name: str, prompt_type: st
             {'role': 'user', 'content': "Classifiez ce texte français :\n" + shot4_v2,},
             {'role': 'assistant', 'content': cot4_v2 + "\n" + "Niveau CECR : **" + classe2CECR[value4_v2] + "**"},
             {'role': 'user','content': "Classifiez ce texte français :\n" + text,},
-            {'role': 'assistant', 'content': 'Niveau CECR : **'}
-        ])
+            {'role': 'assistant', 'content': 'Niveau CECR : **',  "prefix": True}
+        ]
+
+        if 'mistral' in model_name:
+            response = call_with_retries(client=client, model=model_name, messages=messages)
+        else:
+            response = client.chat.completions.create(model=model_name, messages=messages)
+
+    elif prompt_type == "en_CECR": # chain of thought
+        messages=[
+            {
+                'role': 'system',
+                'content': (
+                    'You are a linguistic expert specialized in evaluating French language levels according to the Common European Framework of Reference for Languages (CEFR). Your task is to classify the following French text into one of the CEFR levels: A1, A2, B1, B2, C1, or C2. Respond ONLY with the most appropriate level label, without any explanation or additional text.\n'
+                    '\nExample:'
+                    'Text to classify: "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
+                    'CECR Level: **A1**'
+                ),
+            },
+            {'role': 'user','content': "Classify this French text:\n" + text,},
+            {'role': 'assistant', 'content': 'CECR Level: **',  "prefix": True}
+        ]
+
+        if 'mistral' in model_name:
+            response = call_with_retries(client=client, model=model_name, messages=messages)
+        else:
+            response = client.chat.completions.create(model=model_name, messages=messages)
+
+    elif prompt_type == "en_CECR_few_shot_cot_v2": # chain of thought
+        messages=[
+            {
+                'role': 'system',
+                'content': (
+                    'You are a linguistic expert specialized in evaluating French language levels according to the Common European Framework of Reference for Languages (CEFR). Your task is to classify the following French text into one of the CEFR levels: A1, A2, B1, B2, C1, or C2.\n'
+                    '\nExample:'
+                    'Text to classify: "Bonjour, je m\'appelle Jean. J\'habite à Paris. J\'aime jouer au football.'
+                    'Le texte fourni est composé de phrases simples et courtes, utilisant des structures grammaticales de base et un vocabulaire élémentaire. Selon le Cadre européen commun de référence pour les langues (CECRL), le niveau A1 correspond à la capacité de comprendre et d\'utiliser des expressions familières et quotidiennes ainsi que des énoncés très simples visant à satisfaire des besoins concrets.'
+                    'CECR Level: **A1**'
+                ),
+            },
+            {'role': 'user', 'content': "Classify this French text:\n" + shot3_v2,},
+            {'role': 'assistant', 'content': cot3_v2 + "\n" + "CECR Level: **" + classe2CECR[value3_v2] + "**"},
+            {'role': 'user','content': "Classify this French text:\n" + shot1_v2,},
+            {'role': 'assistant', 'content': cot1_v2 + "\n" + "CECR Level: **" + classe2CECR[value1_v2] + "**"},
+            {'role': 'user', 'content': "Classify this French text:\n" + shot2_v2,},
+            {'role': 'assistant', 'content': cot2_v2 + "\n" + "CECR Level: **" + classe2CECR[value2_v2] + "**"},
+            {'role': 'user', 'content': "Classify this French text:\n" + shot4_v2,},
+            {'role': 'assistant', 'content': cot4_v2 + "\n" + "CECR Level: **" + classe2CECR[value4_v2] + "**"},
+            {'role': 'user','content': "Classify this French text:\n" + text,},
+            {'role': 'assistant', 'content': 'CECR Level: **',  "prefix": True}
+        ]
+
+        if 'mistral' in model_name:
+            response = call_with_retries(client=client, model=model_name, messages=messages)
+        else:
+            response = client.chat.completions.create(model=model_name, messages=messages)
 
     else:
         raise ValueError("Invalid prompt type. Must be 'en', 'fr', 'en_do_not', 'fr_do_not', 'fr_few_shot', 'fr_few_shot_cot', 'fr_few_shot_cot_with_protocol' or 'en_CECR'.")
@@ -248,95 +263,6 @@ def save_confusion_matrix(y_true, y_pred, confusion_matrix_path): # csv_path not
     plt.savefig(confusion_matrix_path)
 
 
-def evaluate_classification_old(dataset, confusion_matrix_path, results_path):
-    pattern = r"(?:<|\*\*)(Very Easy|Easy|Accessible|Complex|Très Facile|Facile|Accessible|\+Complexe|A1|A2|B1|B2|C1|C2)(?:>|\*\*)"
-
-    # Correction des valeurs erronées dans la colonne "difficulty"
-    for index, row in dataset.iterrows():
-        if row["difficulty"] not in ["Very Easy", "Easy", "Accessible", "Complex", "Très Facile", "Facile", "Accessible", "+Complexe", "A1", "A2", "B1", "B2", "C1", "C2"]:
-            # print("Text:", row["text"])
-            # print("Before:", row["difficulty"])
-
-            matches = re.findall(pattern, row["difficulty"]) # Trouver toutes les occurrences
-            if matches:
-                predicted_class = matches[-1]  # Prendre la dernière occurrence
-                if predicted_class in ["A1", "A2", "B1", "B2", "C1", "C2"]:
-                    predicted_class = CECR2classe[predicted_class]
-                dataset.at[index, "difficulty"] = predicted_class
-            else:
-                matches = re.findall(r"(Very Easy|Easy|Accessible|Complex|Très Facile|Facile|Accessible|\+Complexe|A1|A2|B1|B2|C1|C2)", row["difficulty"])
-                if matches:
-                    predicted_class = matches[-1]
-                    if predicted_class in ["A1", "A2", "B1", "B2", "C1", "C2"]:
-                        predicted_class = CECR2classe[predicted_class]
-                    dataset.at[index, "difficulty"] = predicted_class
-                else:
-                    # Calcul du CER pour chaque valeur candidate et sélection de la meilleure
-                    candidates = ["Very Easy", "Easy", "Accessible", "Complex", "Très Facile", "Facile", "Accessible", "+Complexe"]
-                    # cer_scores = [jiwer.cer(row["difficulty"][:max(len(row["difficulty"]), 30)], candidate) for candidate in candidates]
-                    cer_scores = [jiwer.cer(row["difficulty"][-15:].lower(), candidate.lower()) for candidate in candidates]
-                    dataset.at[index, "difficulty"] = candidates[cer_scores.index(min(cer_scores))]
-            # print("After:", dataset.at[index, "difficulty"])
-            # print("Real:", row["gold_score_20_label"])
-            # input()
-
-    # Conversion des valeurs textuelles en numériques
-    mapping_pred = {"Very Easy": 0, "Easy": 1, "Accessible": 2, "Complex": 3, "Très Facile": 0, "Facile": 1, "Accessible": 2, "+Complexe": 3}
-    mapping_gold = {"Très Facile": 0, "Facile": 1, "Accessible": 2, "+Complexe": 3}
-    dataset["difficulty"] = dataset["difficulty"].map(mapping_pred)
-    dataset["gold_score_20_label"] = dataset["gold_score_20_label"].map(mapping_gold)
-
-    # Extraction des valeurs réelles et prédites
-    y_pred = dataset["difficulty"]
-    y_true = dataset["gold_score_20_label"]
-
-    # Calcul des métriques globales
-    global_accuracy = accuracy_score(y_true, y_pred)
-    global_adjacent_accuracy = (abs(y_true - y_pred) <= 1).mean()
-    global_macro_f1 = f1_score(y_true, y_pred, average='macro', zero_division=0)
-
-    print(f"Global Accuracy: {global_accuracy}")
-    print(f"Global Adjacent Accuracy: {global_adjacent_accuracy}")
-    print(f"Global Macro F1: {global_macro_f1}")
-
-    txt = f"global_accuracy\t{global_accuracy}\nglobal_adjacent_accuracy\t{global_adjacent_accuracy}\nglobal_macro_f1\t{global_macro_f1}\n"
-
-    # Calcul des métriques par classe (F1 classique pour chaque classe)
-    for difficulty in [0, 1, 2, 3]:
-        # Sélection des exemples dont la vérité terrain est la classe 'difficulty'
-        idx = (y_true == difficulty)
-        if idx.sum() == 0:
-            continue
-
-        # Accuracy locale (sur les exemples de la classe)
-        class_accuracy = (y_pred[idx] == y_true[idx]).mean()
-
-        # Adjacent accuracy locale (si la différence absolue <= 1)
-        class_adjacent_accuracy = (abs(y_pred[idx] - y_true[idx]) <= 1).mean()
-
-        # Calcul du F1 pour la classe en mode binaire (classe vs reste)
-        y_true_binary = (y_true == difficulty).astype(int)
-        y_pred_binary = (y_pred == difficulty).astype(int)
-        class_f1 = f1_score(y_true_binary, y_pred_binary, average='binary', zero_division=0)
-
-        print()
-        print(f"Difficulty: {difficulty}")
-        print(f"  Accuracy: {class_accuracy}")
-        print(f"  Adjacent Accuracy: {class_adjacent_accuracy}")
-        print(f"  F1: {class_f1}")
-
-        txt += f"difficulty_{difficulty}_accuracy\t{class_accuracy}\ndifficulty_{difficulty}_adjacent_accuracy\t{class_adjacent_accuracy}\ndifficulty_{difficulty}_f1\t{class_f1}\n"
-
-    save_confusion_matrix(y_true, y_pred, confusion_matrix_path)
-    with open(results_path, "w") as f:
-        f.write(txt)
-
-
-
-
-
-
-
 # Division en 5 parties
 def split_into_folds(y_true, y_pred, n_splits=5):
     indices = np.array_split(np.arange(len(y_true)), n_splits)
@@ -372,10 +298,12 @@ def evaluate_classification(dataset, confusion_matrix_path, results_path):
             # print("After:", dataset.at[index, "difficulty"])
             # print("Real:", row["gold_score_20_label"])
             # input()
-
+        elif row["difficulty"] in ["A1", "A2", "B1", "B2", "C1", "C2"]: # added by me for gpt zero en
+            dataset.at[index, "difficulty"] = CECR2classe[row["difficulty"]]
     # Conversion des valeurs textuelles en numériques
     mapping_pred = {"Very Easy": 0, "Easy": 1, "Accessible": 2, "Complex": 3, "Très Facile": 0, "Facile": 1, "Accessible": 2, "+Complexe": 3}
     mapping_gold = {"Très Facile": 0, "Facile": 1, "Accessible": 2, "+Complexe": 3}
+    #print(dataset["difficulty"])
     dataset["difficulty"] = dataset["difficulty"].map(mapping_pred)
     dataset["gold_score_20_label"] = dataset["gold_score_20_label"].map(mapping_gold)
 
@@ -391,6 +319,7 @@ def evaluate_classification(dataset, confusion_matrix_path, results_path):
 
     for y_t, y_p in folds:
         # Calcul des métriques globales
+        print(y_p)
         acc = accuracy_score(y_t, y_p)
         adj_acc = (abs(y_t - y_p) <= 1).mean()
         macro_f1 = f1_score(y_t, y_p, average='macro', zero_division=0)
@@ -462,10 +391,14 @@ if __name__ == "__main__":
     #model_name = "deepseek-r1:14b" # "deepseek-r1:7b" # "gemma3:27b" # "qwen2.5:72b" # "deepseek-r1:32b" # "deepseek-r1:70b" # "llama3.2:1b" # "deepseek-r1:70b" # "deepseek-r1:7b" # "llama3.2:1b"
     #prompt_types = ["en_CECR", "fr_CECR", "fr_CECR_few_shot_cot_v2", "en_CECR_few_shot_cot_v2"] # "en_CECR" # "en_CECR_few_shot_cot_v2" # "fr_CECR" # "fr_CECR_few_shot_cot_v3" # "en_CECR_few_shot_cot" # "fr_few_shot_cot_with_protocol" # "fr_few_shot_cot" # "fr_few_shot" # "fr_do_not" # "en_do_not" # "en" # "fr"
     # prompt_types = ["en_CECR_few_shot_cot_v2"]
-    model_name = "mistral-large-latest"
 
+    #model_name = "mistral-large-latest"
     model_name = "gpt-4.1"
-
+    #prompt_types = ["fr_CECR"]
+    #prompt_types = ["fr_CECR_few_shot_cot_v2"]
+    #prompt_types = ["en_CECR_few_shot_cot_v2"]
+    prompt_types = ["en_CECR"]
+    dataset_path = "../data/Qualtrics_Annotations_B.csv"
 
     if "mistral" in model_name:
         client = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
@@ -473,13 +406,11 @@ if __name__ == "__main__":
         client = OpenAI(
             api_key="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")
 
-    prompt_types = ["fr_CECR"]#, "fr_CECR_few_shot_cot_v2"]
-    dataset_path = "../data/Qualtrics_Annotations_B.csv"
 
 
     for prompt_type in prompt_types:
         csv_path = "../results_global/Qualtrics_Annotations_formatB_out_" + model_name + "_" + prompt_type + ".csv"
-        confusion_matrix_path = "../results_global/results/cm/confusion_matrix_" + model_name + "_" + prompt_type + ".png"
+        confusion_matrix_path = "../results_global/cm/confusion_matrix_" + model_name + "_" + prompt_type + ".png"
         results_path = "../results_global/results_" + model_name + "_" + prompt_type + ".txt"
 
         print('-----------RUNNING model_name %s prompt_type %s -----------------' %(model_name, prompt_type))
