@@ -1,0 +1,15 @@
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "gpt-4.1",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_all_mwe_gpt-4.1.csv",
+  "labels": "all",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "openai"
+}
+

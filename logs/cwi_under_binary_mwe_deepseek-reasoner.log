@@ -1,0 +1,135 @@
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "deepseek-reasoner",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv",
+  "labels": "binary",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "deepseek"
+}
+

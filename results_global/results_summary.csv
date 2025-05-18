@@ -1,0 +1,9 @@
+model,accuracy,adjacent_accuracy,macro_f1
+results_gpt-4.1_en_CECR,30.18,91.76,27.01
+results_gpt-4.1_en_CECR_few_shot_cot_v2,48.38,96.75,44.69
+results_gpt-4.1_fr_CECR,30.15,84.6,35.55
+results_gpt-4.1_fr_CECR_few_shot_cot_v2,46.64,96.1,43.02
+results_mistral-large-latest_en_CECR,31.47,90.02,22.78
+results_mistral-large-latest_en_CECR_few_shot_cot_v2,58.13,98.48,48.6
+results_mistral-large-latest_fr_CECR,31.46,91.33,26.72
+results_mistral-large-latest_fr_CECR_few_shot_cot_v2,56.61,98.48,43.86

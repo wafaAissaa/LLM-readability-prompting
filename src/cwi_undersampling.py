@@ -209,6 +209,14 @@ def classify_binary_list(text, list_tokens, reader_level, client, client_name, m
         )
         return response.choices[0].message.content
 
+    elif client_name == "qwen":
+        response = client.beta.chat.completions.parse(
+            model="qwen2.5-72b-instruct",
+            messages=messages,
+            response_format={"type": "json_object"},
+        )
+        return response.choices[0].message.content
+
     else:
         print("-------CLIENT NAME NOT RECOGNIZED------")
         return None
@@ -327,7 +335,9 @@ if __name__ == "__main__":
         # models_name = "deepseek-reasoner"
         client = OpenAI(api_key="sk-c84faba671dc4207a15894cd3dbc797a", base_url="https://api.deepseek.com/v1")
         print(client)
+    elif args.client_name == "qwen":
+        client = OpenAI(api_key=os.getenv("QWEN_API_KEY"), base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
+
     else:
         print("-------CLIENT NAME NOT RECOGNIZED------")
-
     predict(args.global_file, args.local_file, client, args.client_name, args.model_name, args.predictions_file, args.labels, args.checkpoint)
