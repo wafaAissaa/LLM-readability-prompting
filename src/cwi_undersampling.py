@@ -84,13 +84,13 @@ class AnnotatedText(BaseModel):
 
 class AnnotatedTermBinary(BaseModel):
     term: str
-    label: List[ Literal['1', '0'] ]
+    label: Literal[1, 0] # for openai models this was List[Literal['1', '0']]
 
 class AnnotatedTextBinary(BaseModel):
     annotations: List[AnnotatedTermBinary]
 
 
-def call_with_retries(client, model, messages, response_format, max_retries=10 ):
+def call_with_retries(client, model, messages, response_format, max_retries=10):
     for i in range(max_retries):
         try:
             if args.labels == 'all':
@@ -202,6 +202,13 @@ def classify_binary_list(text, list_tokens, reader_level, client, client_name, m
         )
         return response.choices[0].message.content
 
+    elif client_name == "deepseek":
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=messages
+        )
+        return response.choices[0].message.content
+
     else:
         print("-------CLIENT NAME NOT RECOGNIZED------")
         return None
@@ -259,14 +266,14 @@ def predict(global_file, local_file, client, client_name, model_name, prediction
             all_tokens = positives + negatives
             random.seed(42)
             random.shuffle(all_tokens)
-
-            result = json.loads(classify_binary_list(row['text'], all_tokens, row['classe'], client, client_name, model_name))#['annotations']
+            result = classify_binary_list(row['text'], all_tokens, row['classe'], client, client_name, model_name)
+            if args.client_name != "deepseek":
+                result = json.loads(result)#['annotations']
             #terms = [r["term"] for r in result]
             predictions.at[i, 'predictions'] = result
 
         predictions.to_csv(predictions_file, sep='\t', index=True)
         # predictions.to_json(f"{base}{".json"}", orient="index", indent=2, force_ascii=False)
-
 
 if __name__ == "__main__":
 
@@ -307,14 +314,19 @@ if __name__ == "__main__":
     if args.client_name == "mistralai":
         print('USING MISTRAL MODEL %s' % args.model_name)
         #api_key = os.environ["MISTRAL_API_KEY"]
-        # model = "mistral-large-latest"
+        # model_name = "mistral-large-latest"
         client = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
 
     elif args.client_name == "openai":
         print('USING OPENAI MODEL %s' % args.model_name)
-        #model_name = "gpt-4.1"
+        # model_name = "gpt-4.1"
         client = OpenAI(api_key="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")
 
+    elif args.client_name == "deepseek":
+        print('USING DEEPSEEK MODEL %s' % args.model_name)
+        # models_name = "deepseek-reasoner"
+        client = OpenAI(api_key="sk-c84faba671dc4207a15894cd3dbc797a", base_url="https://api.deepseek.com/v1")
+        print(client)
     else:
         print("-------CLIENT NAME NOT RECOGNIZED------")
 
