@@ -21,6 +21,72 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from tabulate import tabulate
 
 
+types = {'Mot difficile ou inconnu',
+          'Graphie, problème de déchiffrage',
+          'Figure de style, expression idiomatique',
+          'Référence culturelle difficile',
+          'Difficulté liée à la grammaire',
+          "Trop d'informations secondaires",
+          "Indice de cohésion difficile (connecteur, pronom, inférence)",
+          'Ordre syntaxique inhabituel',
+          #'Autre',
+}
+
+true_classes = [
+    'Difficulté liée à la grammaire',
+    'Figure de style, expression idiomatique',
+    'Graphie, problème de déchiffrage',
+    'Indice de cohésion difficile (connecteur, pronom, inférence)',
+    'Mot difficile ou inconnu',
+    'Ordre syntaxique inhabituel',
+    'Référence culturelle difficile',
+    "Trop d'informations secondaires"
+]
+
+prediction_to_true_class = {
+    'Difficulté liée à la grammaire': 'Difficulté liée à la grammaire',
+    'difficulté liée à la grammaire': 'Difficulté liée à la grammaire',
+
+    'Figure de style, expression idiomatique': 'Figure de style, expression idiomatique',
+    'Expression idiomatique': 'Figure de style, expression idiomatique',
+    'Figure of style, expression idiomatique': 'Figure de style, expression idiomatique',
+    'figure de style, expression idiomatique': 'Figure de style, expression idiomatique',
+    'figure de style': 'Figure de style, expression idiomatique',
+
+    'Graphie, problème de déchiffrage': 'Graphie, problème de déchiffrage',
+    'graphie, problème de déchiffrage': 'Graphie, problème de déchiffrage',
+
+    'Indice de cohésion difficile (connecteur, pronom, inférence)': 'Indice de cohésion difficile (connecteur, pronom, inférence)',
+    'Indice de cohésion difficile': 'Indice de cohésion difficile (connecteur, pronom, inférence)',
+    'indice de cohésion difficile': 'Indice de cohésion difficile (connecteur, pronom, inférence)',
+    'indice de cohésion difficile (connecteur, pronom, inférence)': 'Indice de cohésion difficile (connecteur, pronom, inférence)',
+
+    'Mot difficile ou inconnu': 'Mot difficile ou inconnu',
+    'Mot difficile ou enconnu': 'Mot difficile ou inconnu',
+    'Mot difficile ou_inconnu': 'Mot difficile ou inconnu',
+    'mot difficile ou enconnu': 'Mot difficile ou inconnu',
+    'mot difficile ou inconnu': 'Mot difficile ou inconnu',
+    "Expression dont un seul mot isolé rend toute l'expression difficile": 'Mot difficile ou inconnu',
+    'Domaine spécialisé': 'Mot difficile ou inconnu',
+    'Mot appartenant à un domaine spécialisé': 'Mot difficile ou inconnu',
+    'Mot appartenant à une langue étrangère': 'Mot difficile ou inconnu',
+
+    'Ordre syntaxique inhabituel': 'Ordre syntaxique inhabituel',
+    'ordre syntaxique inhabituel': 'Ordre syntaxique inhabituel',
+
+    'Référence culturelle difficile': 'Référence culturelle difficile',
+    'Reference culturelle difficile': 'Référence culturelle difficile',
+    'référence culturelle difficile': 'Référence culturelle difficile',
+
+    "Trop d'informations secondaires": "Trop d'informations secondaires",
+    "trop d'informations secondaires": "Trop d'informations secondaires",
+
+    '0': '0'
+
+}
+
+
+
 
 def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
     """
@@ -200,6 +266,10 @@ def compute_cwi_all_metrics(df, pred_col: str = "predictions_gt", level_col: str
         mlb = MultiLabelBinarizer()
         mlb.fit(y_true )
         print('CLASSES TRUE', mlb.classes_)
+
+        mlb.fit(y_pred)
+        print('CLASSES PRED', mlb.classes_)
+
         mlb.fit(y_true + y_pred)
         print('CLASSES ALL', mlb.classes_)
         y_true_bin = mlb.transform(y_true)
@@ -254,9 +324,24 @@ def compute_cwi_all_metrics(df, pred_col: str = "predictions_gt", level_col: str
             print_multilabel_metrics(results[lvl])
         return results
     else:
+
         all_predictions = []
         for row in df[pred_col]:
             all_predictions.extend(row)
+
+        if True: #"qwen" in args.model_name:
+            labels_set = set()
+            for p in all_predictions:
+                
+                if type(p['label']) is str:
+                    p['label'] = [p['label']]
+    
+                for i, q in enumerate(p['label']):
+                    p['label'][i] = prediction_to_true_class.get(q, q)
+                    #labels_set.add(q)
+            print("SET------------", labels_set) 
+
+
         results = extract_multilabel_metrics_with_per_label(all_predictions)
         print_multilabel_metrics(results)
         return results
@@ -319,6 +404,8 @@ def evaluate_all():
             #print("PREDICTIONS ", predictions)
 
         predictions_df.at[i, "predictions_gt"] = predictions
+
+
 
     metrics = compute_cwi_all_metrics(predictions_df, "predictions_gt", level_col="level", per_level=False)
     print(metrics)
