@@ -90,6 +90,11 @@ def compute_cwi_binary_metrics(df, pred_col: str = "predictions_gt", level_col: 
         if type(predictions[0]['label']) == list:
             y_pred = [int(p['label'][0]) for p in predictions]
         else:
+            #print("-----------", predictions)
+            for p in predictions:
+                if p.get('label') == None:
+                    print(p)
+                    p['label'] = 0
             y_pred = [p['label'] for p in predictions]
         #print(y_pred)
         return {
@@ -340,7 +345,7 @@ def evaluate_binary():
 
     stop = 0
     for i, row in tqdm(global_df.iterrows(), total=len(global_df)):
-        print(i)
+        #print(i)
         #stop += 1
         #if stop == 29:
         #    break
@@ -374,7 +379,7 @@ def evaluate_binary():
         terms = [n['term'] for n in predictions]
         all_in_terms = all(p in terms for p in positives)
 
-        print('ALL_in_terms', all_in_terms)
+        #print('ALL_in_terms', all_in_terms)
 
         if all_in_terms:
             for prediction in predictions:
@@ -393,7 +398,7 @@ def evaluate_binary():
                 best_match, score, _ = match
                 #print(positives)
                 #print(predictions)
-                print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
+                #print(f"missing positive: '{token}' → Closest in predicted terms: '{best_match}' (Similarity: {score:.2f}%)")
 
             matched_terms = {match[0] for match in results.values()}
 
