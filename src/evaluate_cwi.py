@@ -330,7 +330,7 @@ def evaluate_all():
 
 
 def evaluate_binary():
-    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv"
+    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_qwen2.5-72b-instruct.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
 
@@ -356,6 +356,10 @@ def evaluate_binary():
         #for p in positives:
         #    print(p)
         result = predictions_df.at[i, "predictions"]
+
+        if 'qwen' in predictions_file:
+            predictions = ast.literal_eval(result)
+
         if 'deepseek' in predictions_file:
             result = re.search(r"```json\n(.*?)\n```", result, re.DOTALL).group(1).strip()
             #print(result)
@@ -423,10 +427,6 @@ evaluate_binary()
 
 #print(predictions_df)
 #print(predictions_df.loc[1213])
-
-
-
-
 
 
 #annotations_file = "../data/annotations_5.json"

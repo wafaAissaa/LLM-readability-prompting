@@ -152,6 +152,22 @@ def classify_all_words(text, list_tokens, reader_level, client, client_name, mod
             response_format=AnnotatedText,
         )
         return response.choices[0].message.content
+
+    elif client_name == "deepseek":
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=messages
+        )
+        return response.choices[0].message.content
+
+    elif client_name == "qwen":
+        response = client.beta.chat.completions.parse(
+            model=model_name,
+            messages=messages,
+            response_format={"type": "json_object"},
+        )
+        return response.choices[0].message.content
+
     else:
         print("-------CLIENT NAME NOT RECOGNIZED------")
         return None
@@ -211,7 +227,7 @@ def classify_binary_list(text, list_tokens, reader_level, client, client_name, m
 
     elif client_name == "qwen":
         response = client.beta.chat.completions.parse(
-            model="qwen2.5-72b-instruct",
+            model=model_name,
             messages=messages,
             response_format={"type": "json_object"},
         )
@@ -263,7 +279,10 @@ def predict(global_file, local_file, client, client_name, model_name, prediction
 
 
         if labels == "all":
-            predictions.at[i, 'predictions'] = json.loads(classify_all_words(row['text'], positives, row['classe'], client, client_name, model_name))
+            result = json.loads(classify_all_words(row['text'], positives, row['classe'], client, client_name, model_name))
+            if args.client_name != "deepseek":
+                result = json.loads(result)
+            predictions.at[i, 'predictions'] = result
 
         elif labels == "binary":
             if args.sampling == "word":
@@ -336,6 +355,7 @@ if __name__ == "__main__":
         client = OpenAI(api_key="sk-c84faba671dc4207a15894cd3dbc797a", base_url="https://api.deepseek.com/v1")
         print(client)
     elif args.client_name == "qwen":
+        #model_name="qwen2.5-72b-instruct"
         client = OpenAI(api_key=os.getenv("QWEN_API_KEY"), base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1")
 
     else:
