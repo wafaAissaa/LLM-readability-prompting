@@ -284,10 +284,10 @@ def predict(global_file, local_file, client, client_name, model_name, prediction
 
         #print(positives)
         if labels == "all":
-            result = json.loads(classify_all_words(row['text'], positives, row['classe'], client, client_name, model_name))
+            result = classify_all_words(row['text'], positives, row['classe'], client, client_name, model_name)
             #print(result)
             if args.client_name != "deepseek" and args.client_name != "qwen":
-                print(args.client_name)
+                #print(args.client_name)
                 result = json.loads(result)
             predictions.at[i, 'predictions'] = result
 

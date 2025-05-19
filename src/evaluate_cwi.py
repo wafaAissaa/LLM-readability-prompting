@@ -266,7 +266,7 @@ def compute_cwi_all_metrics(df, pred_col: str = "predictions_gt", level_col: str
 def evaluate_all():
 
     #predictions_file = "../predictions/predictions_cwi_under_all_mwe_mistral-large-latest.csv"
-    predictions_file = "../predictions/predictions_cwi_under_all_mwe_gpt-4.1.csv"
+    predictions_file = "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
     global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv',
@@ -282,7 +282,7 @@ def evaluate_all():
         #print("ANNOTATIONS", annotations)
 
         positives = list(sorted(set(annot['text'] for annot in annotations)))
-        predictions = ast.literal_eval(predictions_df.at[i, "predictions"])["annotations"]
+        predictions = ast.literal_eval(predictions_df.at[i, "predictions"])#["annotations"]
         #print(predictions)
         terms = [n['term'] for n in predictions]
         all_in_terms = all(p in terms for p in positives)
@@ -331,11 +331,11 @@ def evaluate_all():
 
     predictions_df.at[i, "predictions_gt"] = predictions"""
 
-#evaluate_all()
+evaluate_all()
 
 
 def evaluate_binary():
-    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_qwen2.5-72b-instruct.csv"
+    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
 
@@ -365,12 +365,17 @@ def evaluate_binary():
         if 'qwen' in predictions_file:
             predictions = ast.literal_eval(result)
 
-        if 'deepseek' in predictions_file:
-            result = re.search(r"```json\n(.*?)\n```", result, re.DOTALL).group(1).strip()
+        elif 'deepseek' in predictions_file:
+            if "```json" in result:
+                result = re.search(r"```json\n(.*?)\n```", result, re.DOTALL).group(1).strip()
+                predictions = json.loads(result)
+            else:
+                m = re.search(r'\[.*?\]', result, re.DOTALL)
+                result = json.loads(m.group())
             #print(result)
-            predictions = json.loads(result)
 
-        if 'gpt' in predictions_file:
+
+        elif 'gpt' in predictions_file:
             predictions = ast.literal_eval(result)["annotations"]
 
         else:
@@ -427,7 +432,7 @@ def evaluate_binary():
     df_metrics = format_cwi_metrics_as_table(metrics)
     print(df_metrics)
 
-evaluate_binary()
+#evaluate_binary()
 
 
 #print(predictions_df)
