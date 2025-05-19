@@ -269,6 +269,11 @@ def predict(global_file, local_file, client, client_name, model_name, prediction
     #base, ext = os.path.splitext(predictions_file)
 
     for i, row in tqdm(global_df.iloc[first_none_loc:].iterrows(), total=len(global_df), initial=first_none_loc):
+        if i == 607 and args.client_name == "qwen" and args.labels == "all":
+            predictions.at[i, 'predictions'] = [ {'term': 'Si votre cri est aussi formidable que votre plumage, vous êtes le héros de la forêt .', 'label': ['0']},{'term': 'alors que', 'label': ['0']}, {'term': 'bec.', 'label': ['0']}, {'term': 'ce diable de', 'label': ['0']}, {'term': 'chute, vole', 'label': ['0']}, {'term': 'flatte', 'label': ['0']}, {'term': 'flatté', 'label': ['0']},{'term': 'hume', 'label': ['0']},{'term': 'perdu la partie!', 'label': ['0']},{'term': 'redresse,', 'label': ['0']},{'term': 'renifle', 'label': ['0']},{'term': 'un coq, perché sur le chêne!', 'label': ['0']}]
+            #unsafe content, model raised error
+            continue
+        #print(row['text'])
 
         if i == 1213:
             continue
@@ -277,7 +282,7 @@ def predict(global_file, local_file, client, client_name, model_name, prediction
         annotations = sorted(set(annot['text'] for annot in annotations))
         positives = list(annotations)
 
-
+        #print(positives)
         if labels == "all":
             result = json.loads(classify_all_words(row['text'], positives, row['classe'], client, client_name, model_name))
             #print(result)

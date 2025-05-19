@@ -73,3 +73,93 @@ Arguments:
   "client_name": "qwen"
 }
 
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "qwen2.5-72b-instruct",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv",
+  "labels": "all",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "qwen"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "qwen2.5-72b-instruct",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv",
+  "labels": "all",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "qwen"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "qwen2.5-72b-instruct",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv",
+  "labels": "all",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "qwen"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "qwen2.5-72b-instruct",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv",
+  "labels": "all",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "qwen"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "qwen2.5-72b-instruct",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv",
+  "labels": "all",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "qwen"
+}
+
+
+
+===== New Run =====
+Arguments:
+{
+  "model_name": "qwen2.5-72b-instruct",
+  "global_file": "Qualtrics_Annotations_B.csv",
+  "local_file": "annotations_completes_2.xlsx",
+  "predictions_file": "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv",
+  "labels": "all",
+  "checkpoint": "True",
+  "sampling": "mwe",
+  "client_name": "qwen"
+}
+
