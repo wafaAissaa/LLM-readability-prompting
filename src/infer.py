@@ -401,10 +401,10 @@ if __name__ == "__main__":
     dataset_path = "../data/Qualtrics_Annotations_B.csv"
 
     if "mistral" in model_name:
-        client = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        client = Mistral(api_key=None)
     else:
         client = OpenAI(
-            api_key="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")
+            api_key=None)
 
 
 

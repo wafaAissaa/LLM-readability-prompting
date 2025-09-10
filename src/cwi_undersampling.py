@@ -204,13 +204,11 @@ def classify_binary_list(text, list_tokens, reader_level, client, client_name, m
 
     if client_name == "mistralai":
         # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        #mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
         response = call_with_retries(client=client, model=model_name, messages=messages,
                                      response_format={"type": "json_object",})
         #print(response.choices[0].message.content)
         return response.choices[0].message.content
     elif client_name == "openai":
-        #openai_chat = OpenAI(api_key="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")
         response = client.beta.chat.completions.parse(
             model=model_name,
             messages=messages,
@@ -349,17 +347,17 @@ if __name__ == "__main__":
         print('USING MISTRAL MODEL %s' % args.model_name)
         #api_key = os.environ["MISTRAL_API_KEY"]
         # model_name = "mistral-large-latest"
-        client = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        client = Mistral(api_key=None)
 
     elif args.client_name == "openai":
         print('USING OPENAI MODEL %s' % args.model_name)
         # model_name = "gpt-4.1"
-        client = OpenAI(api_key="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")
+        client = OpenAI(api_key=None)
 
     elif args.client_name == "deepseek":
         print('USING DEEPSEEK MODEL %s' % args.model_name)
         # models_name = "deepseek-reasoner"
-        client = OpenAI(api_key="sk-c84faba671dc4207a15894cd3dbc797a", base_url="https://api.deepseek.com/v1")
+        client = OpenAI(api_key=None, base_url="https://api.deepseek.com/v1")
         print(client)
     elif args.client_name == "qwen":
         #model_name="qwen2.5-72b-instruct"

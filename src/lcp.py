@@ -62,7 +62,7 @@ def classify_difficult_words(token, text, reader_level, mistralai=True, model="m
 
     if mistralai:
         #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -97,7 +97,7 @@ def classify_deciphering_issues(token, text, reader_level, mistralai=True, model
 
     if mistralai:
         #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -131,7 +131,7 @@ def classify_figurative_expressions(token, text, reader_level, mistralai=True, m
 
     if mistralai:
         #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -166,7 +166,7 @@ def classify_cultural_references(token, text, reader_level, mistralai=True, mode
 
     if mistralai:
         #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -200,7 +200,7 @@ def classify_grammatical_difficulties(token, text, reader_level, mistralai=True,
 
     if mistralai:
         #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -236,7 +236,7 @@ def classify_secondary_information(token, text, reader_level, mistralai=True, mo
 
     if mistralai:
         # mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -270,7 +270,7 @@ def classify_cohesion_issues(token, text, reader_level, mistralai=True, model="m
 
     if mistralai:
         #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:
@@ -303,7 +303,7 @@ def classify_unusual_syntax(token, text, reader_level, mistralai=True, model="mi
 
     if mistralai:
         #mistral_chat = Mistral(api_key=os.environ["MISTRAL_API_KEY"])
-        mistral_chat = Mistral(api_key="0d3qJFz4PjVCvqhpBO5zthAU5icy8exJ")
+        mistral_chat = Mistral(api_key=None)
         response = call_with_retries(client=mistral_chat, model=model, messages=messages)
         return response.choices[0].message.content
     else:

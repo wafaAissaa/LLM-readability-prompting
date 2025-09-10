@@ -2,7 +2,7 @@ import openai
 from openai import OpenAI
 
 
-openai.api_key ="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"
+openai.api_key = None
 client = OpenAI(api_key=openai.api_key)
 
 
