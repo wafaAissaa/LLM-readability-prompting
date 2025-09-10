@@ -1,0 +1,61 @@
+['Bouna.', 'Colbert', "Pourtant, l'un voudra se défriser les cheveux.", 'Tarzan »', 'Tarzan.', 'Tout ce qui est en rapport avec la peur, la haine, le mépris, le rejet des personnes et des cultures noires.', 'Zyed', 'actions?', 'anti-négrophobie', 'antiraciste.', 'brigade', 'brigade anti-négrophobie', 'collectif', "d'incitation", "d'incitation à la haine raciale.", 'discriminations', 'discriminations raciales.', "elle ne s'en donne pas les moyens.", 'enchaîné', 'faciès.', 'inscrivait', 'moyens.', 'négrophobie.', 'négrophobie?', 'peur,', "s'est formée", 'syndrome', 'syndrome Tarzan.', 'racisme', 'la', 'Il', 'racisme', 'par', 'les', 'incendies', 'avec', 'se', 'que', 'suis', 'Peuple.', 'depuis', 'existe', 'la', 'les', 'sont', ':', 'Éduquer', 'est fondamental dans la lutte contre le', 'Pourquoi les Noirs et les Arabes sont', 'fondamental dans', 'région parisienne.', '2005. Pourquoi', 'En 2005,', 'France veut', "des Noirs s'étaient battus pour de grandes idées. Je suis travailleur social. Éduquer les mentalités est fondamental dans la lutte contre", 'des images négatives : le']
+
+Positives:
+'Bouna.' -> 1 tokens
+'Colbert' -> 1 tokens
+'Tarzan.' -> 1 tokens
+'Zyed' -> 1 tokens
+'actions?' -> 1 tokens
+'anti-négrophobie' -> 1 tokens
+'antiraciste.' -> 1 tokens
+'brigade' -> 1 tokens
+'collectif' -> 1 tokens
+"d'incitation" -> 1 tokens
+'discriminations' -> 1 tokens
+'enchaîné' -> 1 tokens
+'faciès.' -> 1 tokens
+'inscrivait' -> 1 tokens
+'moyens.' -> 1 tokens
+'négrophobie.' -> 1 tokens
+'négrophobie?' -> 1 tokens
+'peur,' -> 1 tokens
+'syndrome' -> 1 tokens
+'Tarzan »' -> 2 tokens
+'brigade anti-négrophobie' -> 2 tokens
+'discriminations raciales.' -> 2 tokens
+"s'est formée" -> 2 tokens
+'syndrome Tarzan.' -> 2 tokens
+"d'incitation à la haine raciale." -> 5 tokens
+"Pourtant, l'un voudra se défriser les cheveux." -> 7 tokens
+"elle ne s'en donne pas les moyens." -> 7 tokens
+'Tout ce qui est en rapport avec la peur, la haine, le mépris, le rejet des personnes et des cultures noires.' -> 21 tokens
+
+Negatives:
+'racisme' -> 1 tokens
+'la' -> 1 tokens
+'Il' -> 1 tokens
+'racisme' -> 1 tokens
+'par' -> 1 tokens
+'les' -> 1 tokens
+'incendies' -> 1 tokens
+'avec' -> 1 tokens
+'se' -> 1 tokens
+'que' -> 1 tokens
+'suis' -> 1 tokens
+'Peuple.' -> 1 tokens
+'depuis' -> 1 tokens
+'existe' -> 1 tokens
+'la' -> 1 tokens
+'les' -> 1 tokens
+'sont' -> 1 tokens
+':' -> 1 tokens
+'Éduquer' -> 1 tokens
+'fondamental dans' -> 2 tokens
+'région parisienne.' -> 2 tokens
+'2005. Pourquoi' -> 2 tokens
+'En 2005,' -> 2 tokens
+'France veut' -> 2 tokens
+'des images négatives : le' -> 5 tokens
+'est fondamental dans la lutte contre le' -> 7 tokens
+'Pourquoi les Noirs et les Arabes sont' -> 7 tokens
+"des Noirs s'étaient battus pour de grandes idées. Je suis travailleur social. Éduquer les mentalités est fondamental dans la lutte contre" -> 21 tokens
