@@ -108,7 +108,7 @@ def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
         """Extract precision, recall, f1-score from sklearn classification_report."""
         rows = []
         for cls, vals in report.items():
-            if cls in ['accuracy', 'macro avg', 'weighted avg']:
+            '''if cls in ['accuracy', 'macro avg', 'weighted avg']:
                 continue
             if isinstance(vals, dict):
                 rows.append({
@@ -116,8 +116,27 @@ def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
                     "Precision": round(vals.get("precision", 0.0), 4) * 100,
                     "Recall": round(vals.get("recall", 0.0), 4) * 100,
                     "F1-Score": round(vals.get("f1-score", 0.0), 4) * 100,
-                    "Support": int(vals.get("support", 0)) * 100,
+                    "Support": int(vals.get("support", 0)),
+                })'''
+            # Check if vals is a dict (per-class metrics)
+            if isinstance(vals, dict):
+                rows.append({
+                    f"{prefix}Class": str(cls),
+                    "Precision": round(vals.get("precision", 0.0), 4) * 100,
+                    "Recall": round(vals.get("recall", 0.0), 4) * 100,
+                    "F1-Score": round(vals.get("f1-score", 0.0), 4) * 100,
+                    "Support": int(vals.get("support", 0)),
                 })
+            else:
+                # For 'accuracy', which is a single float
+                rows.append({
+                    f"{prefix}Class": str(cls),
+                    "Precision": None,
+                    "Recall": None,
+                    "F1-Score": round(vals, 4) * 100,
+                    "Support": None,
+                })
+
         return pd.DataFrame(rows)
 
     if isinstance(next(iter(metrics.values())), dict) and 'precision' in next(iter(metrics.values())).keys():
@@ -126,11 +145,13 @@ def format_cwi_metrics_as_table(metrics: Union[Dict, Dict[str, Dict]]):
         for cls, m in metrics.items():
             report_df = extract_classification_report(m["classification_report"], prefix=f"{cls}_")
             summary_row = pd.DataFrame([extract_summary(m)], index=[f"{cls}_summary"])
+            print('\n', summary_row, '\n')
             tables.append(pd.concat([summary_row, report_df.set_index(f"{cls}_Class")], axis=0))
         return pd.concat(tables)
     else:
         # Overall case
         summary_df = pd.DataFrame([extract_summary(metrics)], index=["Overall_summary"])
+        print('\n', summary_df, '\n')
         report_df = extract_classification_report(metrics["classification_report"])
         return pd.concat([summary_df, report_df.set_index("Class")], axis=0)
 
@@ -164,9 +185,9 @@ def compute_cwi_binary_metrics(df, pred_col: str = "predictions_gt", level_col: 
             y_pred = [p['label'] for p in predictions]
         #print(y_pred)
         return {
-            'precision': precision_score(y_true, y_pred, zero_division=0),
-            'recall': recall_score(y_true, y_pred, zero_division=0),
-            'f1_score': f1_score(y_true, y_pred, zero_division=0),
+            'precision': precision_score(y_true, y_pred, average='macro', zero_division=0),
+            'recall': recall_score(y_true, y_pred, average='macro', zero_division=0),
+            'f1_score': f1_score(y_true, y_pred, average='macro', zero_division=0),
             'accuracy': accuracy_score(y_true, y_pred),
             'confusion_matrix': confusion_matrix(y_true, y_pred).tolist(),
             'classification_report': classification_report(y_true, y_pred, output_dict=True, zero_division=0)
@@ -189,6 +210,7 @@ def compute_cwi_binary_metrics(df, pred_col: str = "predictions_gt", level_col: 
     else:
         all_predictions = []
         for row in df[pred_col]:
+            #print(row)
             all_predictions.extend(row)
         return extract_metrics(all_predictions)
 
@@ -350,8 +372,10 @@ def compute_cwi_all_metrics(df, pred_col: str = "predictions_gt", level_col: str
 
 def evaluate_all():
 
-    #predictions_file = "../predictions/predictions_cwi_under_all_mwe_mistral-large-latest.csv"
-    predictions_file = "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv"
+    predictions_file = "../predictions/predictions_cwi_under_all_mwe_mistral-large-latest.csv"
+    #predictions_file = "../predictions/predictions_cwi_under_all_mwe_qwen2.5-72b-instruct.csv"
+    predictions_file = "../predictions/predictions_cwi_under_all_mwe_gpt-4.1.csv"
+    predictions_file = "../predictions/predictions_cwi_under_all_mwe_deepseek-reasoner.csv"
     predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
     global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv',
@@ -422,9 +446,13 @@ evaluate_all()
 
 
 def evaluate_binary():
-    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv"
-    predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
+    #predictions_file = "../predictions/predictions_cwi_under_binary_mwe_mistral-large-latest.csv"
+    #predictions_file = "../predictions/predictions_cwi_under_binary_mwe_gpt-4.1.csv"
+    #predictions_file = "../predictions/predictions_cwi_under_binary_mwe_qwen2.5-72b-instruct.csv"
+    predictions_file = "../predictions/predictions_cwi_under_binary_mwe_deepseek-reasoner.csv"
+
+    predictions_df = pd.read_csv(predictions_file, sep='\t', index_col="text_indice")
 
     global_df, local_df = load_data(file_path="../data", global_file='Qualtrics_Annotations_B.csv', local_file='annotations_completes_2.xlsx')
     predictions_df["predictions_gt"] = None
@@ -468,6 +496,7 @@ def evaluate_binary():
         else:
             predictions = ast.literal_eval(result)
 
+        #print(predictions)
         terms = [n['term'] for n in predictions]
         all_in_terms = all(p in terms for p in positives)
 
@@ -514,8 +543,9 @@ def evaluate_binary():
 
         print([p['label'] for p in predictions])'''
 
-
+    #print(predictions_df)
     metrics = compute_cwi_binary_metrics(predictions_df, "predictions_gt", level_col="level", per_level=True)
+    print(metrics)
     df_metrics = format_cwi_metrics_as_table(metrics)
     print(df_metrics)
 
